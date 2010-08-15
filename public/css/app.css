@@ -11,10 +11,57 @@ textarea {
 
 span.key {
   font-weight: bold;
+}
+
+.key, .value, .margin {
   margin-right: 0.3em;
 }
 
 .empty {
   color: #bbb;
+}
+
+.collection {
+}
+
+.key {
+  padding-bottom: 0.5em;
+}
+
+.margin, .items, .key, .value {
+  float: left;
+}
+
+.item {
+  position: relative;
+}
+
+.key {
+  clear: left;
+}
+
+.key, .value {
+  padding-left: 0.2em;
+}
+
+.collectionButton {
+  background-color: black;
+  color: white;
+}
+
+.key span {
+  background-color: #bde;
+}
+
+.leaf span {
+  background-color: #ddd;
+}
+
+.collectionButton, .key span, .leaf span {
+  padding-top: 0.1em;
+  padding-bottom: 0.1em;
+  padding-left: 0.3em;
+  padding-right: 0.3em;
+  -webkit-border-radius: 0.3em;
 }
 
