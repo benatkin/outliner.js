@@ -33,10 +33,11 @@ span.key {
 }
 
 .item {
-  position: relative;
+  float: left;
 }
 
-.key {
+.item.notFirst {
+  position: relative;
   clear: left;
 }
 

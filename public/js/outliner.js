@@ -20,8 +20,13 @@
       var margin = $('<div>').appendTo(this).addClass('mapMargin margin');
       var mapButton = $('<span>').appendTo(margin).text('{}').addClass('collectionButton');
       var items = $('<div>').appendTo(this).addClass('mapItems items');
+      var first = true;
       $.each(value, function(key, value) {
         var item = $('<div>').appendTo(items).addClass('mapItem item');
+        if (! first) {
+          item.addClass('notFirst');
+        }
+        first = false;
         var keyElem = $('<div>').appendTo(item).addClass('mapKey key');
         keySpan = $('<span>').appendTo(keyElem).text(key);
         var valueElem = $('<div>').appendTo(item).addClass('mapValue value');
@@ -35,8 +40,13 @@
       var margin = $('<div>').appendTo(this).addClass('listMargin margin');
       var listButton = $('<span>').appendTo(margin).text('[]').addClass('collectionButton');
       var items = $('<div>').appendTo(this).addClass('listItems items');
+      var first = true;
       $.each(value, function(key, value) {
         var item = $('<div>').appendTo(items).addClass('listItem item');
+        if (! first) {
+          item.addClass('notFirst');
+        }
+        first = false;
         var keyElem = $('<div>').appendTo(item).addClass('listKey key');
         keySpan = $('<span>').appendTo(keyElem).text(key);
         var valueElem = $('<div>').appendTo(item).addClass('listValue value');
