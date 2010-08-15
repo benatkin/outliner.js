@@ -8,3 +8,9 @@ textarea {
   width: 90%;
   height: 24em;
 }
+
+span.key {
+  font-weight: bold;
+  margin-right: 0.3em;
+}
+
