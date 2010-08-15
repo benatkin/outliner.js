@@ -14,3 +14,7 @@ span.key {
   margin-right: 0.3em;
 }
 
+.empty {
+  color: #bbb;
+}
+
