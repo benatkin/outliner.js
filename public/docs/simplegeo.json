@@ -1,0 +1,27 @@
+{
+    "created": 1273100052, 
+    "geometry": {
+        "type": "Point", 
+        "coordinates": [
+            -74.016630649999996, 
+            40.716322249999997
+        ]
+    }, 
+    "id": "13452218429", 
+    "layerLink": {
+        "href": "http://api.simplegeo.com/0.1/layer/com.simplegeo.global.twitter.json"
+    }, 
+    "type": "Feature", 
+    "properties": {
+        "body": "Ballin (@ Rockefeller Park) http://4sq.com/cgbweb", 
+        "username": "unluddite", 
+        "layer": "com.simplegeo.global.twitter", 
+        "name": "Eugene Smolenskiy", 
+        "url": "http://twitter.com/unluddite/status/13452218429", 
+        "userid": 23370776, 
+        "thumbnail": "http://img.tweetimag.es/i/unluddite_n.png"
+    }, 
+    "selfLink": {
+        "href": "http://api.simplegeo.com/0.1/records/com.simplegeo.global.twitter/13452218429.json"
+    }
+}

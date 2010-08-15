@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <title>outliner.js</title>
+    <script type="text/javascript" src="js/jquery-1.4.2.js"></script>
+    <script type="text/javascript" src="js/json2.js"></script>
+    <script type="text/javascript" src="js/jquery.serializeObject.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+    <script type="text/javascript" src="js/outliner.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/app.css" />
+    <link rel="stylesheet" type="text/css" href="css/outliner.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="header">
+        <h1>outliner.js</h1>
+      </div>
+      <div class="optionPanel">
+        <form name="optionForm">
+          <p>
+            <select name="doc">
+              <option value="twitter">twitter</option>
+              <option value="simplegeo">simplegeo</option>
+              <option value="tumblr">tumblr</option>
+            </select>
+            <select name="style">
+              <option value="simple_ul">simple UL</option>
+            </select>
+            <input type="checkbox" name="hideEmpty" />hide empty
+          </p>
+        </form>
+      </div>
+      <div class="doc">
+      </div>
+      <div class="footer">
+      </div>
+    </div>
+  </body>
+</html>
