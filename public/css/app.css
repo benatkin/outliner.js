@@ -1,3 +1,7 @@
+* {
+  font-family: Helvetica, Verdana, Arial, sans-serif;
+}
+
 .wrap {
   width: 720px;
   margin-left: auto;
@@ -9,60 +13,41 @@ textarea {
   height: 24em;
 }
 
-span.key {
-  font-weight: bold;
-}
-
-.key, .value, .margin {
-  margin-right: 0.3em;
-}
-
-.empty {
-  color: #bbb;
-}
-
-.collection {
+.row {
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
 }
 
 .key {
-  padding-bottom: 0.5em;
+  background-color: #ddd;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  -webkit-border-radius: 0.5em;
+  margin-right: 0.5em;
 }
 
-.margin, .items, .key, .value {
-  float: left;
-}
-
-.item {
-  float: left;
-}
-
-.item.notFirst {
-  position: relative;
-  clear: left;
-}
-
-.key, .value {
-  padding-left: 0.2em;
-}
-
-.collectionButton {
+.collectionKey {
   background-color: black;
   color: white;
 }
 
-.key span {
-  background-color: #bde;
+.collectionItems {
+  margin-left: 1em;
 }
 
-.leaf span {
-  background-color: #ddd;
+.leafValue.null {
+  color: #bbb;
 }
 
-.collectionButton, .key span, .leaf span {
-  padding-top: 0.1em;
-  padding-bottom: 0.1em;
-  padding-left: 0.3em;
-  padding-right: 0.3em;
-  -webkit-border-radius: 0.3em;
+.leafValue.number {
+  color: #d0d;
+}
+
+.leafValue.string {
+  color: #080;
+}
+
+.leafValue.boolean {
+  color: #880;
 }
 

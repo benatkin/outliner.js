@@ -1,75 +1,46 @@
 (function($) {
   $.outliner = {};
 
-  $.outliner.classes = "map mapMargin mapItems mapItem mapKey mapValue " +
-                       "list listMargin listItems listItem listIndex listValue " +
-                       "collection margin items item key value" +
-                       "leaf string boolean number null";
-
   $.nodeType = function(value) {
     return (value != null && typeof value === "object")
             ? (Object.prototype.toString.apply(value) === '[object Array]' ? 'list' : 'map')
             : 'leaf';
   }
-  
-  var update = {
-    'map': function(value) {
-      this.removeClass("list leaf");
-      this.children().remove();
-      this.addClass("map collection");
-      var margin = $('<div>').appendTo(this).addClass('mapMargin margin');
-      var mapButton = $('<span>').appendTo(margin).text('{}').addClass('collectionButton');
-      var items = $('<div>').appendTo(this).addClass('mapItems items');
-      var first = true;
-      $.each(value, function(key, value) {
-        var item = $('<div>').appendTo(items).addClass('mapItem item');
-        if (! first) {
-          item.addClass('notFirst');
-        }
-        first = false;
-        var keyElem = $('<div>').appendTo(item).addClass('mapKey key');
-        keySpan = $('<span>').appendTo(keyElem).text(key);
-        var valueElem = $('<div>').appendTo(item).addClass('mapValue value');
-        valueElem.value(value);
-      });
-    },
-    'list': function(value) {
-      this.removeClass("map leaf");
-      this.children().remove();
-      this.addClass("list collection");
-      var margin = $('<div>').appendTo(this).addClass('listMargin margin');
-      var listButton = $('<span>').appendTo(margin).text('[]').addClass('collectionButton');
-      var items = $('<div>').appendTo(this).addClass('listItems items');
-      var first = true;
-      $.each(value, function(key, value) {
-        var item = $('<div>').appendTo(items).addClass('listItem item');
-        if (! first) {
-          item.addClass('notFirst');
-        }
-        first = false;
-        var keyElem = $('<div>').appendTo(item).addClass('listKey key');
-        keySpan = $('<span>').appendTo(keyElem).text(key);
-        var valueElem = $('<div>').appendTo(item).addClass('listValue value');
-        valueElem.value(value);
-      });
-    },
-    'leaf': function(value) {
-      this.addClass('leaf');
-      $('<span>').appendTo(this).text(value);
-    }
-  }
 
-  $.fn.value = function(value) {
-    this.each(function() {
-      if (value != undefined) {
-        var nodeType = $.nodeType(value);
-        update[nodeType].call($(this), value);
+  $.leafType = function(value) {
+    if (value == null)
+      return "null";
+    else
+      return typeof value;
+  }
+  
+  $.fn.appendCollection = function(key, value) {
+    var nodeType = $.nodeType(value);
+    var container = $('<div>').appendTo(this).addClass('collection');
+
+    // construct collection row
+    var symbol = nodeType == "map" ? "{}" : "[]";
+    var collectionItem = $('<div>').appendTo(this).addClass(nodeType).addClass('collectionRow row');
+    var keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
+
+    // construct items
+    var items = $('<div>').appendTo(this).addClass('collectionItems');
+    $.each(value, function(key, value) {
+      if ($.nodeType(value) == 'leaf') {
+        items.appendLeaf(key, value);
       } else {
+        items.appendCollection(key, value);
       }
     });
   }
 
-  $.fn.value.update = update;
+  $.fn.appendLeaf = function(key, value) {
+    var leafItem = $('<div>').appendTo(this).addClass('leafRow row');
+    var keyElem = $('<span>').appendTo(leafItem).text(key).addClass('leafKey key');
+    var leafType = $.leafType(value);
+    if (value == null) { value = "null" }
+    var valueElem = $('<span>').appendTo(leafItem).text(value).addClass('leafValue').addClass(leafType);
+  }
 
   var removeEmpty = function(data) {
     if (data != null && typeof data == "object") {
@@ -120,16 +91,16 @@
       container.html('<textarea>' + JSON.stringify(options.data, undefined, 2) + '</textarea>');
     },
     'ul': function(container, options) {
-      if (options.hideEmpty) removeEmpty(options.data);
       render_ul(container, options.data, options)
     },
     'div': function(container, options) {
-      container.value(options.data);
+      container.appendCollection('root', options.data);
     }
   };
 
   $.fn.outliner = function(options) {
-    this.children().remove();
+    this.html('');
+    if (options.hideEmpty) removeEmpty(options.data);
     renderers[options.style](this, options);
   };
 })(jQuery);
