@@ -35,7 +35,7 @@ textarea {
   margin-left: 1em;
 }
 
-.leafValue.null {
+.leafValue.null, .leafValue.empty {
   color: #bbb;
 }
 

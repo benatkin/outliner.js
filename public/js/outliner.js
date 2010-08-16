@@ -10,8 +10,26 @@
   $.leafType = function(value) {
     if (value == null)
       return "null";
+    else if (value === "")
+      return "empty";
     else
       return typeof value;
+  }
+
+  $.each_sorted = function(collection, callback) {
+    if (collection && collection.push) {
+      $.each(collection, callback);
+    } else {
+      keys = [];
+      $.each(collection, function(key, value) {
+        keys.push(key);
+      });
+      keys.sort();
+      $.each(keys, function(ix, key) {
+        var value = collection[key];
+        callback.call(value, key, value);
+      });
+    }
   }
   
   $.fn.appendCollection = function(key, value) {
@@ -25,7 +43,7 @@
 
     // construct items
     var items = $('<div>').appendTo(this).addClass('collectionItems');
-    $.each(value, function(key, value) {
+    $.each_sorted(value, function(key, value) {
       if ($.nodeType(value) == 'leaf') {
         items.appendLeaf(key, value);
       } else {
@@ -38,7 +56,10 @@
     var leafItem = $('<div>').appendTo(this).addClass('leafRow row');
     var keyElem = $('<span>').appendTo(leafItem).text(key).addClass('leafKey key');
     var leafType = $.leafType(value);
-    if (value == null) { value = "null" }
+    if (value == null)
+      value = "null";
+    else if (value === "")
+      value = '""';
     var valueElem = $('<span>').appendTo(leafItem).text(value).addClass('leafValue').addClass(leafType);
   }
 
@@ -46,7 +67,7 @@
     if (data != null && typeof data == "object") {
       var empty = true;
       $.each(data, function(key, value) {
-        if (removeEmpty(value) == false || value == null || value == '""') {
+        if (removeEmpty(value) == false || value == null || value === "") {
           delete data[key];
         } else {
           empty = false;
