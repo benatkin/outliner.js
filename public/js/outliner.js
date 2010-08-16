@@ -54,13 +54,17 @@
 
   $.fn.appendLeaf = function(key, value) {
     var leafItem = $('<div>').appendTo(this).addClass('leafRow row');
-    var keyElem = $('<span>').appendTo(leafItem).text(key).addClass('leafKey key');
+    var keyDiv = $('<div>').appendTo(leafItem).addClass('leafKeyDiv');
+    var keyElem = $('<span>').appendTo(keyDiv).text(key).addClass('leafKey key');
     var leafType = $.leafType(value);
     if (value == null)
       value = "null";
     else if (value === "")
       value = '""';
-    var valueElem = $('<span>').appendTo(leafItem).text(value).addClass('leafValue').addClass(leafType);
+    var valueElem = $('<div>').appendTo(leafItem).text(value).addClass('leafValue').addClass(leafType);
+    if (leafType == "string") {
+      valueElem.html(valueElem.html().replace("\n", "<br />"));
+    }
   }
 
   var removeEmpty = function(data) {

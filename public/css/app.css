@@ -8,6 +8,10 @@
   margin-right: auto;
 }
 
+.doc {
+  margin-bottom: 5em;
+}
+
 textarea {
   width: 90%;
   height: 24em;
@@ -49,5 +53,17 @@ textarea {
 
 .leafValue.boolean {
   color: #880;
+}
+
+.row {
+  clear: left;
+}
+
+.leafKeyDiv {
+  float: left;
+}
+
+.leafValue {
+  float: left;
 }
 
