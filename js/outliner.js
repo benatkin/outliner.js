@@ -1,4 +1,17 @@
 (function($) {
+  window.Outliner = {};
+
+  window.Outliner.Pair = Backbone.Model.extend({
+    initialize: function() {}
+  });
+
+  window.Outliner.Collection = Backbone.Collection.extend({
+    model: Outliner.Pair,
+    comparator: function(pair) {
+      return pair.get("key");
+    }
+  });
+
   $.outliner = {};
 
   $.nodeType = function(value) {
@@ -15,22 +28,6 @@
     else
       return typeof value;
   }
-
-  $.each_sorted = function(collection, callback) {
-    if (collection && collection.push) {
-      $.each(collection, callback);
-    } else {
-      keys = [];
-      $.each(collection, function(key, value) {
-        keys.push(key);
-      });
-      keys.sort();
-      $.each(keys, function(ix, key) {
-        var value = collection[key];
-        callback.call(value, key, value);
-      });
-    }
-  }
   
   $.fn.appendCollection = function(key, value) {
     var nodeType = $.nodeType(value);
@@ -41,13 +38,18 @@
     var collectionItem = $('<div>').appendTo(this).addClass(nodeType).addClass('collectionRow row');
     var keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
 
+    var map = new Outliner.Collection();
+    _.each(value, function(value, key) {
+      map.add(new Outliner.Pair({ "value": value, "key": key }));
+    });
+
     // construct items
     var items = $('<div>').appendTo(this).addClass('collectionItems');
-    $.each_sorted(value, function(key, value) {
-      if ($.nodeType(value) == 'leaf') {
-        items.appendLeaf(key, value);
+    map.each(function(pair) {
+      if ($.nodeType(pair.get("value")) == 'leaf') {
+        items.appendLeaf(pair.get("key"), pair.get("value"));
       } else {
-        items.appendCollection(key, value);
+        items.appendCollection(pair.get("key"), pair.get("value"));
       }
     });
   }
@@ -85,6 +87,6 @@
   $.fn.outliner = function(options) {
     this.html('');
     if (options.hideEmpty) removeEmpty(options.data);
-    this.appendCollection('root', options.data);
+    this.appendCollection('root', options.data, options);
   };
 })(jQuery);
