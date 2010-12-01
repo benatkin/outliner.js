@@ -3,7 +3,7 @@
     $('form').bind('change', function() {
       var options = $('form').serializeObject();
       $.ajax({
-        'url': 'docs/' + options.doc + '.json',
+        'url': 'data/' + options.doc + '.json',
         'dataType': 'json',
         'success': function(data) {
           options['data'] = data;

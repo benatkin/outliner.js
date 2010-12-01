@@ -1,0 +1,51 @@
+.row {
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+}
+
+.key {
+  background-color: #ddd;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  -webkit-border-radius: 0.5em;
+  margin-right: 0.5em;
+}
+
+.collectionKey {
+  background-color: black;
+  color: white;
+}
+
+.collectionItems {
+  margin-left: 1em;
+}
+
+.leafValue.null, .leafValue.empty {
+  color: #bbb;
+}
+
+.leafValue.number {
+  color: #d0d;
+}
+
+.leafValue.string {
+  color: #080;
+}
+
+.leafValue.boolean {
+  color: #880;
+}
+
+.row {
+  clear: left;
+}
+
+.leafKeyDiv {
+  float: left;
+}
+
+.leafValue {
+  float: left;
+}
+
+
