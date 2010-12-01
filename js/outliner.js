@@ -17,15 +17,10 @@
   }
 
   $.each_sorted = function(collection, callback) {
-    if (collection && collection.push) {
+    if (_(collection).isArray()) {
       $.each(collection, callback);
     } else {
-      keys = [];
-      $.each(collection, function(key, value) {
-        keys.push(key);
-      });
-      keys.sort();
-      $.each(keys, function(ix, key) {
+      $.each(_(collection).keys().sort(), function(ix, key) {
         var value = collection[key];
         callback.call(value, key, value);
       });
