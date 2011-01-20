@@ -1,0 +1,51 @@
+.keybubble .row {
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+}
+
+.keybubble .key {
+  background-color: #ddd;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  -webkit-border-radius: 0.5em;
+  margin-right: 0.5em;
+}
+
+.keybubble .collectionKey {
+  background-color: black;
+  color: white;
+}
+
+.keybubble .collectionItems {
+  margin-left: 1em;
+}
+
+.keybubble .leafValue.null, .keybubble .leafValue.empty {
+  color: #bbb;
+}
+
+.keybubble .leafValue.number {
+  color: #d0d;
+}
+
+.keybubble .leafValue.string {
+  color: #080;
+}
+
+.keybubble .leafValue.boolean {
+  color: #880;
+}
+
+.keybubble .row {
+  clear: left;
+}
+
+.keybubble .leafKeyDiv {
+  float: left;
+}
+
+.keybubble .leafValue {
+  float: left;
+}
+
+

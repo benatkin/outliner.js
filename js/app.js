@@ -7,7 +7,7 @@
         'dataType': 'json',
         'success': function(data) {
           options['data'] = data;
-          $('.doc').outliner(options);
+          $('.doc').keybubble(options);
         }
       });
     }).change();
