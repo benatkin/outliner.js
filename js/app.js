@@ -30,7 +30,7 @@
     },
     render: function() {
       $('.doc').html('');
-      if (this.renderer == 'plain') {
+      if (this.renderer == 'keybubble') {
         var options = {data: this.data};
         $('.doc').keybubble(options);
       } else {
