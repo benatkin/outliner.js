@@ -1,3 +1,4 @@
+//     Backbone.js 0.3.3
 //     (c) 2010 Jeremy Ashkenas, DocumentCloud Inc.
 //     Backbone may be freely distributed under the MIT license.
 //     For all details and documentation:
@@ -18,18 +19,25 @@
   }
 
   // Current version of the library. Keep in sync with `package.json`.
-  Backbone.VERSION = '0.2.0';
+  Backbone.VERSION = '0.3.3';
 
   // Require Underscore, if we're on the server, and it's not already present.
   var _ = this._;
   if (!_ && (typeof require !== 'undefined')) _ = require("underscore")._;
 
-  // For Backbone's purposes, jQuery owns the `$` variable.
-  var $ = this.jQuery;
+  // For Backbone's purposes, either jQuery or Zepto owns the `$` variable.
+  var $ = this.jQuery || this.Zepto;
 
-  // Turn on `emulateHttp` to fake `"PUT"` and `"DELETE"` requests via
-  // the `_method` parameter.
-  Backbone.emulateHttp = false;
+  // Turn on `emulateHTTP` to use support legacy HTTP servers. Setting this option will
+  // fake `"PUT"` and `"DELETE"` requests via the `_method` parameter and set a
+  // `X-Http-Method-Override` header.
+  Backbone.emulateHTTP = false;
+
+  // Turn on `emulateJSON` to support legacy servers that can't deal with direct
+  // `application/json` requests ... will encode the body as
+  // `application/x-www-form-urlencoded` instead and will send the model in a
+  // form param named `model`.
+  Backbone.emulateJSON = false;
 
   // Backbone.Events
   // -----------------
@@ -104,12 +112,16 @@
 
   // Create a new model, with defined attributes. A client id (`cid`)
   // is automatically generated and assigned for you.
-  Backbone.Model = function(attributes) {
+  Backbone.Model = function(attributes, options) {
+    attributes || (attributes = {});
+    if (this.defaults) attributes = _.extend({}, this.defaults, attributes);
     this.attributes = {};
+    this._escapedAttributes = {};
     this.cid = _.uniqueId('c');
-    this.set(attributes || {}, {silent : true});
+    this.set(attributes, {silent : true});
     this._previousAttributes = _.clone(this.attributes);
-    if (this.initialize) this.initialize(attributes);
+    if (options && options.collection) this.collection = options.collection;
+    this.initialize(attributes, options);
   };
 
   // Attach all inheritable methods to the Model prototype.
@@ -122,6 +134,10 @@
     // Has the item been changed since the last `"change"` event?
     _changed : false,
 
+    // Initialize is an empty function by default. Override it with your own
+    // initialization logic.
+    initialize : function(){},
+
     // Return a copy of the model's `attributes` object.
     toJSON : function() {
       return _.clone(this.attributes);
@@ -132,6 +148,14 @@
       return this.attributes[attr];
     },
 
+    // Get the HTML-escaped value of an attribute.
+    escape : function(attr) {
+      var html;
+      if (html = this._escapedAttributes[attr]) return html;
+      var val = this.attributes[attr];
+      return this._escapedAttributes[attr] = escapeHTML(val == null ? '' : val);
+    },
+
     // Set a hash of model attributes on the object, firing `"change"` unless you
     // choose to silence it.
     set : function(attrs, options) {
@@ -140,21 +164,10 @@
       options || (options = {});
       if (!attrs) return this;
       if (attrs.attributes) attrs = attrs.attributes;
-      var now = this.attributes;
+      var now = this.attributes, escaped = this._escapedAttributes;
 
-      // Run validation if `validate` is defined. If a specific `error` callback
-      // has been passed, call that instead of firing the general `"error"` event.
-      if (this.validate) {
-        var error = this.validate(attrs);
-        if (error) {
-          if (options.error) {
-            options.error(this, error);
-          } else {
-            this.trigger('error', this, error);
-          }
-          return false;
-        }
-      }
+      // Run validation.
+      if (!options.silent && this.validate && !this._performValidation(attrs, options)) return false;
 
       // Check for changes of `id`.
       if ('id' in attrs) this.id = attrs.id;
@@ -162,33 +175,64 @@
       // Update attributes.
       for (var attr in attrs) {
         var val = attrs[attr];
-        if (val === '') val = null;
         if (!_.isEqual(now[attr], val)) {
           now[attr] = val;
+          delete escaped[attr];
           if (!options.silent) {
             this._changed = true;
-            this.trigger('change:' + attr, this, val);
+            this.trigger('change:' + attr, this, val, options);
           }
         }
       }
 
       // Fire the `"change"` event, if the model has been changed.
-      if (!options.silent && this._changed) this.change();
+      if (!options.silent && this._changed) this.change(options);
       return this;
     },
 
-    // Remove an attribute from the model, firing `"change"` unless you choose to
-    // silence it.
+    // Remove an attribute from the model, firing `"change"` unless you choose
+    // to silence it.
     unset : function(attr, options) {
       options || (options = {});
       var value = this.attributes[attr];
+
+      // Run validation.
+      var validObj = {};
+      validObj[attr] = void 0;
+      if (!options.silent && this.validate && !this._performValidation(validObj, options)) return false;
+
+      // Remove the attribute.
       delete this.attributes[attr];
+      delete this._escapedAttributes[attr];
       if (!options.silent) {
         this._changed = true;
-        this.trigger('change:' + attr, this);
-        this.change();
+        this.trigger('change:' + attr, this, void 0, options);
+        this.change(options);
       }
-      return value;
+      return this;
+    },
+
+    // Clear all attributes on the model, firing `"change"` unless you choose
+    // to silence it.
+    clear : function(options) {
+      options || (options = {});
+      var old = this.attributes;
+
+      // Run validation.
+      var validObj = {};
+      for (attr in old) validObj[attr] = void 0;
+      if (!options.silent && this.validate && !this._performValidation(validObj, options)) return false;
+
+      this.attributes = {};
+      this._escapedAttributes = {};
+      if (!options.silent) {
+        this._changed = true;
+        for (attr in old) {
+          this.trigger('change:' + attr, this, void 0, options);
+        }
+        this.change(options);
+      }
+      return this;
     },
 
     // Fetch the model from the server. If the server's representation of the
@@ -201,8 +245,8 @@
         if (!model.set(model.parse(resp), options)) return false;
         if (options.success) options.success(model, resp);
       };
-      var error = options.error && _.bind(options.error, null, model);
-      Backbone.sync('read', this, success, error);
+      var error = wrapError(options.error, model, options);
+      (this.sync || Backbone.sync)('read', this, success, error);
       return this;
     },
 
@@ -210,17 +254,16 @@
     // If the server returns an attributes hash that differs, the model's
     // state will be `set` again.
     save : function(attrs, options) {
-      attrs   || (attrs = {});
       options || (options = {});
-      if (!this.set(attrs, options)) return false;
+      if (attrs && !this.set(attrs, options)) return false;
       var model = this;
       var success = function(resp) {
         if (!model.set(model.parse(resp), options)) return false;
         if (options.success) options.success(model, resp);
       };
-      var error = options.error && _.bind(options.error, null, model);
+      var error = wrapError(options.error, model, options);
       var method = this.isNew() ? 'create' : 'update';
-      Backbone.sync(method, this, success, error);
+      (this.sync || Backbone.sync)(method, this, success, error);
       return this;
     },
 
@@ -233,8 +276,8 @@
         if (model.collection) model.collection.remove(model);
         if (options.success) options.success(model, resp);
       };
-      var error = options.error && _.bind(options.error, null, model);
-      Backbone.sync('delete', this, success, error);
+      var error = wrapError(options.error, model, options);
+      (this.sync || Backbone.sync)('delete', this, success, error);
       return this;
     },
 
@@ -244,7 +287,7 @@
     url : function() {
       var base = getUrl(this.collection);
       if (this.isNew()) return base;
-      return base + '/' + this.id;
+      return base + (base.charAt(base.length - 1) == '/' ? '' : '/') + this.id;
     },
 
     // **parse** converts a response into the hash of attributes to be `set` on
@@ -264,10 +307,10 @@
       return !this.id;
     },
 
-    // Call this method to fire manually fire a `change` event for this model.
+    // Call this method to manually fire a `change` event for this model.
     // Calling this will cause all objects observing the model to update.
-    change : function() {
-      this.trigger('change', this);
+    change : function(options) {
+      this.trigger('change', this, options);
       this._previousAttributes = _.clone(this.attributes);
       this._changed = false;
     },
@@ -307,6 +350,22 @@
     // `"change"` event.
     previousAttributes : function() {
       return _.clone(this._previousAttributes);
+    },
+
+    // Run validation against a set of incoming attributes, returning `true`
+    // if all is well. If a specific `error` callback has been passed,
+    // call that instead of firing the general `"error"` event.
+    _performValidation : function(attrs, options) {
+      var error = this.validate(attrs);
+      if (error) {
+        if (options.error) {
+          options.error(this, error);
+        } else {
+          this.trigger('error', this, error, options);
+        }
+        return false;
+      }
+      return true;
     }
 
   });
@@ -326,7 +385,7 @@
     this._boundOnModelEvent = _.bind(this._onModelEvent, this);
     this._reset();
     if (models) this.refresh(models, {silent: true});
-    if (this.initialize) this.initialize(models, options);
+    this.initialize(models, options);
   };
 
   // Define the Collection's inheritable methods.
@@ -335,6 +394,10 @@
     // The default model for a collection is just a **Backbone.Model**.
     // This should be overridden in most cases.
     model : Backbone.Model,
+
+    // Initialize is an empty function by default. Override it with your own
+    // initialization logic.
+    initialize : function(){},
 
     // The JSON representation of a Collection is an array of the
     // models' attributes.
@@ -370,7 +433,8 @@
 
     // Get a model from the set by id.
     get : function(id) {
-      return id && this._byId[id.id != null ? id.id : id];
+      if (id == null) return null;
+      return this._byId[id.id != null ? id.id : id];
     },
 
     // Get a model from the set by client id.
@@ -389,7 +453,7 @@
       options || (options = {});
       if (!this.comparator) throw new Error('Cannot sort a set without a comparator');
       this.models = this.sortBy(this.comparator);
-      if (!options.silent) this.trigger('refresh', this);
+      if (!options.silent) this.trigger('refresh', this, options);
       return this;
     },
 
@@ -406,7 +470,7 @@
       options || (options = {});
       this._reset();
       this.add(models, {silent: true});
-      if (!options.silent) this.trigger('refresh', this);
+      if (!options.silent) this.trigger('refresh', this, options);
       return this;
     },
 
@@ -419,17 +483,21 @@
         collection.refresh(collection.parse(resp));
         if (options.success) options.success(collection, resp);
       };
-      var error = options.error && _.bind(options.error, null, collection);
-      Backbone.sync('read', this, success, error);
+      var error = wrapError(options.error, collection, options);
+      (this.sync || Backbone.sync)('read', this, success, error);
       return this;
     },
 
     // Create a new instance of a model in this collection. After the model
     // has been created on the server, it will be added to the collection.
     create : function(model, options) {
+      var coll = this;
       options || (options = {});
-      if (!(model instanceof Backbone.Model)) model = new this.model(model);
-      var coll = model.collection = this;
+      if (!(model instanceof Backbone.Model)) {
+        model = new this.model(model, {collection: coll});
+      } else {
+        model.collection = coll;
+      }
       var success = function(nextModel, resp) {
         coll.add(nextModel);
         if (options.success) options.success(nextModel, resp);
@@ -463,7 +531,7 @@
     _add : function(model, options) {
       options || (options = {});
       if (!(model instanceof Backbone.Model)) {
-        model = new this.model(model);
+        model = new this.model(model, {collection: this});
       }
       var already = this.getByCid(model);
       if (already) throw new Error(["Can't add the same model to a set twice", already.id]);
@@ -474,7 +542,7 @@
       this.models.splice(index, 0, model);
       model.bind('all', this._boundOnModelEvent);
       this.length++;
-      if (!options.silent) this.trigger('add', model);
+      if (!options.silent) model.trigger('add', model, this, options);
       return model;
     },
 
@@ -482,15 +550,15 @@
     // hash indexes for `id` and `cid` lookups.
     _remove : function(model, options) {
       options || (options = {});
-      model = this.getByCid(model);
+      model = this.getByCid(model) || this.get(model);
       if (!model) return null;
       delete this._byId[model.id];
       delete this._byCid[model.cid];
       delete model.collection;
       this.models.splice(this.indexOf(model), 1);
-      model.unbind('all', this._boundOnModelEvent);
       this.length--;
-      if (!options.silent) this.trigger('remove', model);
+      if (!options.silent) model.trigger('remove', model, this, options);
+      model.unbind('all', this._boundOnModelEvent);
       return model;
     },
 
@@ -520,6 +588,168 @@
     };
   });
 
+  // Backbone.Controller
+  // -------------------
+
+  // Controllers map faux-URLs to actions, and fire events when routes are
+  // matched. Creating a new one sets its `routes` hash, if not set statically.
+  Backbone.Controller = function(options) {
+    options || (options = {});
+    if (options.routes) this.routes = options.routes;
+    this._bindRoutes();
+    this.initialize(options);
+  };
+
+  // Cached regular expressions for matching named param parts and splatted
+  // parts of route strings.
+  var namedParam = /:([\w\d]+)/g;
+  var splatParam = /\*([\w\d]+)/g;
+
+  // Set up all inheritable **Backbone.Controller** properties and methods.
+  _.extend(Backbone.Controller.prototype, Backbone.Events, {
+
+    // Initialize is an empty function by default. Override it with your own
+    // initialization logic.
+    initialize : function(){},
+
+    // Manually bind a single named route to a callback. For example:
+    //
+    //     this.route('search/:query/p:num', 'search', function(query, num) {
+    //       ...
+    //     });
+    //
+    route : function(route, name, callback) {
+      Backbone.history || (Backbone.history = new Backbone.History);
+      if (!_.isRegExp(route)) route = this._routeToRegExp(route);
+      Backbone.history.route(route, _.bind(function(fragment) {
+        var args = this._extractParameters(route, fragment);
+        callback.apply(this, args);
+        this.trigger.apply(this, ['route:' + name].concat(args));
+      }, this));
+    },
+
+    // Simple proxy to `Backbone.history` to save a fragment into the history,
+    // without triggering routes.
+    saveLocation : function(fragment) {
+      Backbone.history.saveLocation(fragment);
+    },
+
+    // Bind all defined routes to `Backbone.history`.
+    _bindRoutes : function() {
+      if (!this.routes) return;
+      for (var route in this.routes) {
+        var name = this.routes[route];
+        this.route(route, name, this[name]);
+      }
+    },
+
+    // Convert a route string into a regular expression, suitable for matching
+    // against the current location fragment.
+    _routeToRegExp : function(route) {
+      route = route.replace(namedParam, "([^\/]*)").replace(splatParam, "(.*?)");
+      return new RegExp('^' + route + '$');
+    },
+
+    // Given a route, and a URL fragment that it matches, return the array of
+    // extracted parameters.
+    _extractParameters : function(route, fragment) {
+      return route.exec(fragment).slice(1);
+    }
+
+  });
+
+  // Backbone.History
+  // ----------------
+
+  // Handles cross-browser history management, based on URL hashes. If the
+  // browser does not support `onhashchange`, falls back to polling.
+  Backbone.History = function() {
+    this.handlers = [];
+    this.fragment = this.getFragment();
+    _.bindAll(this, 'checkUrl');
+  };
+
+  // Cached regex for cleaning hashes.
+  var hashStrip = /^#*/;
+
+  // Set up all inheritable **Backbone.History** properties and methods.
+  _.extend(Backbone.History.prototype, {
+
+    // The default interval to poll for hash changes, if necessary, is
+    // twenty times a second.
+    interval: 50,
+
+    // Get the cross-browser normalized URL fragment.
+    getFragment : function(loc) {
+      return (loc || window.location).hash.replace(hashStrip, '');
+    },
+
+    // Start the hash change handling, returning `true` if the current URL matches
+    // an existing route, and `false` otherwise.
+    start : function() {
+      var docMode = document.documentMode;
+      var oldIE = ($.browser.msie && (!docMode || docMode <= 7));
+      if (oldIE) {
+        this.iframe = $('<iframe src="javascript:0" tabindex="-1" />').hide().appendTo('body')[0].contentWindow;
+      }
+      if ('onhashchange' in window && !oldIE) {
+        $(window).bind('hashchange', this.checkUrl);
+      } else {
+        setInterval(this.checkUrl, this.interval);
+      }
+      return this.loadUrl();
+    },
+
+    // Add a route to be tested when the hash changes. Routes are matched in the
+    // order they are added.
+    route : function(route, callback) {
+      this.handlers.push({route : route, callback : callback});
+    },
+
+    // Checks the current URL to see if it has changed, and if it has,
+    // calls `loadUrl`, normalizing across the hidden iframe.
+    checkUrl : function() {
+      var current = this.getFragment();
+      if (current == this.fragment && this.iframe) {
+        current = this.getFragment(this.iframe.location);
+      }
+      if (current == this.fragment ||
+          current == decodeURIComponent(this.fragment)) return false;
+      if (this.iframe) {
+        window.location.hash = this.iframe.location.hash = current;
+      }
+      this.loadUrl();
+    },
+
+    // Attempt to load the current URL fragment. If a route succeeds with a
+    // match, returns `true`. If no defined routes matches the fragment,
+    // returns `false`.
+    loadUrl : function() {
+      var fragment = this.fragment = this.getFragment();
+      var matched = _.any(this.handlers, function(handler) {
+        if (handler.route.test(fragment)) {
+          handler.callback(fragment);
+          return true;
+        }
+      });
+      return matched;
+    },
+
+    // Save a fragment into the hash history. You are responsible for properly
+    // URL-encoding the fragment in advance. This does not trigger
+    // a `hashchange` event.
+    saveLocation : function(fragment) {
+      fragment = (fragment || '').replace(hashStrip, '');
+      if (this.fragment == fragment) return;
+      window.location.hash = this.fragment = fragment;
+      if (this.iframe && (fragment != this.getFragment(this.iframe.location))) {
+        this.iframe.document.open().close();
+        this.iframe.location.hash = fragment;
+      }
+    }
+
+  });
+
   // Backbone.View
   // -------------
 
@@ -529,13 +759,13 @@
     this._configure(options || {});
     this._ensureElement();
     this.delegateEvents();
-    if (this.initialize) this.initialize(options);
+    this.initialize(options);
   };
 
-  // jQuery lookup, scoped to DOM elements within the current view.
-  // This should be prefered to global jQuery lookups, if you're dealing with
+  // Element lookup, scoped to DOM elements within the current view.
+  // This should be prefered to global lookups, if you're dealing with
   // a specific view.
-  var jQueryDelegate = function(selector) {
+  var selectorDelegate = function(selector) {
     return $(selector, this.el);
   };
 
@@ -543,19 +773,29 @@
   var eventSplitter = /^(\w+)\s*(.*)$/;
 
   // Set up all inheritable **Backbone.View** properties and methods.
-  _.extend(Backbone.View.prototype, {
+  _.extend(Backbone.View.prototype, Backbone.Events, {
 
     // The default `tagName` of a View's element is `"div"`.
     tagName : 'div',
 
-    // Attach the jQuery function as the `$` and `jQuery` properties.
-    $       : jQueryDelegate,
-    jQuery  : jQueryDelegate,
+    // Attach the `selectorDelegate` function as the `$` property.
+    $       : selectorDelegate,
+
+    // Initialize is an empty function by default. Override it with your own
+    // initialization logic.
+    initialize : function(){},
 
     // **render** is the core function that your view should override, in order
     // to populate its element (`this.el`), with the appropriate HTML. The
     // convention is for **render** to always return `this`.
     render : function() {
+      return this;
+    },
+
+    // Remove this view from the DOM. Note that the view isn't present in the
+    // DOM by default, so calling this method may be a no-op.
+    remove : function() {
+      $(this.el).remove();
       return this;
     },
 
@@ -581,12 +821,12 @@
     //     }
     //
     // pairs. Callbacks will be bound to the view, with `this` set properly.
-    // Uses jQuery event delegation for efficiency.
+    // Uses event delegation for efficiency.
     // Omitting the selector binds the event to `this.el`.
     // This only works for delegate-able events: not `focus`, `blur`, and
     // not `change`, `submit`, and `reset` in Internet Explorer.
     delegateEvents : function(events) {
-      if (!(events || (events = this.events))) return this;
+      if (!(events || (events = this.events))) return;
       $(this.el).unbind();
       for (var key in events) {
         var methodName = events[key];
@@ -599,7 +839,6 @@
           $(this.el).delegate(selector, eventName, method);
         }
       }
-      return this;
     },
 
     // Performs the initial configuration of a View with a set of options.
@@ -621,18 +860,22 @@
       if (this.el) return;
       var attrs = {};
       if (this.id) attrs.id = this.id;
-      if (this.className) attrs.className = this.className;
+      if (this.className) attrs["class"] = this.className;
       this.el = this.make(this.tagName, attrs);
     }
 
   });
 
-  // Set up inheritance for the model, collection, and view.
-  var extend = Backbone.Model.extend = Backbone.Collection.extend = Backbone.View.extend = function (protoProps, classProps) {
+  // The self-propagating extend function that Backbone classes use.
+  var extend = function (protoProps, classProps) {
     var child = inherits(this, protoProps, classProps);
     child.extend = extend;
     return child;
   };
+
+  // Set up inheritance for the model, collection, and view.
+  Backbone.Model.extend = Backbone.Collection.extend =
+    Backbone.Controller.extend = Backbone.View.extend = extend;
 
   // Map from CRUD to HTTP for our default `Backbone.sync` implementation.
   var methodMap = {
@@ -647,55 +890,98 @@
 
   // Override this function to change the manner in which Backbone persists
   // models to the server. You will be passed the type of request, and the
-  // model in question. By default, uses jQuery to make a RESTful Ajax request
+  // model in question. By default, uses makes a RESTful Ajax request
   // to the model's `url()`. Some possible customizations could be:
   //
   // * Use `setTimeout` to batch rapid-fire updates into a single request.
   // * Send up the models as XML instead of JSON.
   // * Persist models via WebSockets instead of Ajax.
   //
-  // Turn on `Backbone.emulateHttp` in order to send `PUT` and `DELETE` requests
-  // as `POST`, with an `_method` parameter containing the true HTTP method.
+  // Turn on `Backbone.emulateHTTP` in order to send `PUT` and `DELETE` requests
+  // as `POST`, with a `_method` parameter containing the true HTTP method,
+  // as well as all requests with the body as `application/x-www-form-urlencoded` instead of
+  // `application/json` with the model in a param named `model`.
   // Useful when interfacing with server-side languages like **PHP** that make
   // it difficult to read the body of `PUT` requests.
   Backbone.sync = function(method, model, success, error) {
-    var sendModel = method === 'create' || method === 'update';
-    var data = sendModel ? {model : JSON.stringify(model)} : {};
     var type = methodMap[method];
-    if (Backbone.emulateHttp && (type === 'PUT' || type === 'DELETE')) {
-      data._method = type;
-      type = 'POST';
+    var modelJSON = (method === 'create' || method === 'update') ?
+                    JSON.stringify(model.toJSON()) : null;
+
+    // Default JSON-request options.
+    var params = {
+      url:          getUrl(model),
+      type:         type,
+      contentType:  'application/json',
+      data:         modelJSON,
+      dataType:     'json',
+      processData:  false,
+      success:      success,
+      error:        error
+    };
+
+    // For older servers, emulate JSON by encoding the request into an HTML-form.
+    if (Backbone.emulateJSON) {
+      params.contentType = 'application/x-www-form-urlencoded';
+      params.processData = true;
+      params.data        = modelJSON ? {model : modelJSON} : {};
     }
-    $.ajax({
-      url       : getUrl(model),
-      type      : type,
-      data      : data,
-      dataType  : 'json',
-      success   : success,
-      error     : error
-    });
+
+    // For older servers, emulate HTTP by mimicking the HTTP method with `_method`
+    // And an `X-HTTP-Method-Override` header.
+    if (Backbone.emulateHTTP) {
+      if (type === 'PUT' || type === 'DELETE') {
+        if (Backbone.emulateJSON) params.data._method = type;
+        params.type = 'POST';
+        params.beforeSend = function(xhr) {
+          xhr.setRequestHeader("X-HTTP-Method-Override", type);
+        };
+      }
+    }
+
+    // Make the request.
+    $.ajax(params);
   };
 
   // Helpers
   // -------
 
+  // Shared empty constructor function to aid in prototype-chain creation.
+  var ctor = function(){};
+
   // Helper function to correctly set up the prototype chain, for subclasses.
   // Similar to `goog.inherits`, but uses a hash of prototype properties and
   // class properties to be extended.
-  var inherits = function(parent, protoProps, classProps) {
+  var inherits = function(parent, protoProps, staticProps) {
     var child;
-    if (protoProps.hasOwnProperty('constructor')) {
+
+    // The constructor function for the new subclass is either defined by you
+    // (the "constructor" property in your `extend` definition), or defaulted
+    // by us to simply call `super()`.
+    if (protoProps && protoProps.hasOwnProperty('constructor')) {
       child = protoProps.constructor;
     } else {
       child = function(){ return parent.apply(this, arguments); };
     }
-    var ctor = function(){};
+
+    // Set the prototype chain to inherit from `parent`, without calling
+    // `parent`'s constructor function.
     ctor.prototype = parent.prototype;
     child.prototype = new ctor();
-    _.extend(child.prototype, protoProps);
-    if (classProps) _.extend(child, classProps);
+
+    // Add prototype properties (instance properties) to the subclass,
+    // if supplied.
+    if (protoProps) _.extend(child.prototype, protoProps);
+
+    // Add static properties to the constructor function, if supplied.
+    if (staticProps) _.extend(child, staticProps);
+
+    // Correctly set child's `prototype.constructor`, for `instanceof`.
     child.prototype.constructor = child;
+
+    // Set a convenience property in case the parent's prototype is needed later.
     child.__super__ = parent.prototype;
+
     return child;
   };
 
@@ -704,6 +990,22 @@
   var getUrl = function(object) {
     if (!(object && object.url)) throw new Error("A 'url' property or function must be specified");
     return _.isFunction(object.url) ? object.url() : object.url;
+  };
+
+  // Wrap an optional error callback with a fallback error event.
+  var wrapError = function(onError, model, options) {
+    return function(resp) {
+      if (onError) {
+        onError(model, resp);
+      } else {
+        model.trigger('error', model, resp, options);
+      }
+    };
+  };
+
+  // Helper function to escape a string for HTML rendering.
+  var escapeHTML = function(string) {
+    return string.replace(/&(?!\w+;)/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   };
 
 })();

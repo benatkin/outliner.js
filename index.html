@@ -6,6 +6,7 @@
     <script type="text/javascript" src="vendor/jquery.serializeObject.js"></script>
     <script type="text/javascript" src="vendor/underscore.js"></script>
     <script type="text/javascript" src="vendor/backbone.js"></script>
+    <script type="text/javascript" src="vendor/flatstache.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="keybubble.js"></script>
     <link rel="stylesheet" type="text/css" href="css/app.css" />
@@ -19,13 +20,18 @@
       <div class="optionPanel">
         <form name="optionForm">
           <p>
+            renderer:
+            <select name="renderer">
+              <option value="keybubble">keybubble</option>
+              <option value="plain">plain</option>
+            </select>
+            doc:
             <select name="doc">
-              <!--<option value="pages">pages</option>-->
               <option value="twitter">twitter</option>
               <option value="simplegeo">simplegeo</option>
               <option value="tumblr">tumblr</option>
             </select>
-            <input type="checkbox" name="hideEmpty" />hide empty
+            <!-- options here -->
           </p>
         </form>
       </div>
