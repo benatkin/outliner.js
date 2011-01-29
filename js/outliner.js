@@ -20,14 +20,6 @@
     Outliner = this.Outliner = {};
   }
 
-  // The model for a collection of expanded nodes.
-  Outliner.NodeCollection = Backbone.Model.extend({
-  });
-
-  // The model for an expanded node.
-  Outliner.NodeModel = Backbone.Model.extend({
-  });
-
   // The model for a tree of data.
   Outliner.Model = Backbone.Model.extend({
     renderMarkup: function() {
