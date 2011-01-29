@@ -10,6 +10,10 @@
 
 (function(){
 
+  var Backbone = this.Backbone;
+  if (typeof this.Backbone === 'undefined')
+    Backbone = require('backbone');
+  
   // From Backbone.js
   // The top-level namespace. All public Outliner classes and modules will
   // be attached to this. Exported for both CommonJS and the browser.
@@ -22,8 +26,9 @@
 
   // The model for a tree of data.
   Outliner.Model = Backbone.Model.extend({
-    render: function() {
-      return "";
+    // Render according to the attributes.
+    render: function(path) {
+      return '';
     }
   });
 
