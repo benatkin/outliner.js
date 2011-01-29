@@ -22,7 +22,7 @@
 
   // The model for a tree of data.
   Outliner.Model = Backbone.Model.extend({
-    renderMarkup: function() {
+    render: function() {
       return "";
     }
   });
@@ -30,7 +30,7 @@
   // The Outline view.
   Outliner.View = Backbone.View.extend({
     render: function() {
-      $(this.el).html(this.model.renderMarkup());
+      $(this.el).html(this.model.render());
       return this;
     }
   });
