@@ -1,16 +1,17 @@
 (function($) {
   window.OutlinerController = Backbone.Controller.extend({
-    init: function() {
+    initialize: function() {
       _.bindAll(this, 'docData', 'navigate');
 
-      var navvy = this.navigate;
-      $('form').bind('change', function() {
-        var options = $('form').serializeObject();
-        navvy(options.renderer, options.doc);
-      });
+      $('form').bind('change', this.navigate);
     },
-    navigate: function(renderer, doc) {
-      window.location.hash = renderer + '/' + doc;
+    navigate: function() {
+      var options = $('form').serializeObject();
+      window.location.hash = options.renderer + '/' + options.doc;
+    },
+    setForm: function() {
+      $('select[name=renderer]').val(this.renderer);
+      $('select[name=doc]').val(this.doc);
     },
     routes: {
       ":renderer/:doc": "doc"
@@ -30,7 +31,11 @@
     },
     render: function() {
       $('.doc').html('');
-      if (this.renderer == 'keybubble') {
+      if (this.renderer === 'outliner') {
+        this.model = new Outliner.Model({data: this.data});
+        this.view = new Outliner.View({model: this.model});
+        $(this.view.render().el).appendTo($('.doc'));
+      } else if (this.renderer === 'keybubble') {
         var options = {data: this.data};
         $('.doc').keybubble(options);
       } else {
@@ -44,8 +49,8 @@
 
   $(document).ready(function() {
     window.outliner_controller = new OutlinerController();
-    window.outliner_controller.init();
     Backbone.history.start();
-    $('form').change();
+    window.location.hash = window.location.hash;
+    window.outliner_controller.setForm();
   });
 })(jQuery);
