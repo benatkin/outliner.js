@@ -24,18 +24,9 @@
     Outliner = this.Outliner = {};
   }
 
-  // The model for a tree of data.
-  Outliner.Model = Backbone.Model.extend({
-    // Render according to the attributes.
-    render: function(value) {
-      return '';
-    }
-  });
-
-  // The Outline view.
   Outliner.View = Backbone.View.extend({
     render: function() {
-      $(this.el).html(this.model.render());
+      $(this.el).html('');
       return this;
     }
   });
