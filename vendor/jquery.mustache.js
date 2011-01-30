@@ -253,11 +253,12 @@ var Mustache = function() {
     */
     escape: function(s) {
       s = String(s === null ? "" : s);
-      return s.replace(/&(?!\w+;)|["<>\\]/g, function(s) {
+      return s.replace(/&(?!\w+;)|["'<>\\]/g, function(s) {
         switch(s) {
         case "&": return "&amp;";
         case "\\": return "\\\\";
-        case '"': return '\"';
+        case '"': return '&quot;';
+        case "'": return '&#39;';
         case "<": return "&lt;";
         case ">": return "&gt;";
         default: return s;
@@ -328,19 +329,12 @@ var Mustache = function() {
       if(!send_fun) {
         return renderer.buffer.join("\n");
       }
-    },
-    escape : function(text) {
-      return new Renderer().escape(text);
     }
   });
 }();
 
   $.mustache = function(template, view, partials) {
     return Mustache.to_html(template, view, partials);
-  };
-
-  $.mustache.escape = function(text) {
-    return Mustache.escape(text);
   };
 
 })(jQuery);
