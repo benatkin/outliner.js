@@ -27,7 +27,7 @@
   // The model for a tree of data.
   Outliner.Model = Backbone.Model.extend({
     // Render according to the attributes.
-    render: function(path) {
+    render: function(value) {
       return '';
     }
   });

@@ -4,9 +4,15 @@ I'm working on a way to present JSON data, besides serializing it to a string. I
 
 ## TODO
 
+* Render with templates
 * Collapsing and Expanding
-* Summarizing
-* Somersaults
+* Rendering string filter for syntax highlighting
+* Rendering string filter for links
+* Editing leaf values
+* Adding items to objects
+* Adding itmes to arrays
+* Removing itmes from objects and arrays
+* Changing types
 
 ## License
 

@@ -14,11 +14,19 @@
       $('select[name=doc]').val(this.doc);
     },
     routes: {
-      ":renderer/:doc": "doc"
+      ":renderer/:doc": "doc",
+      "": "doc"
     },
     doc: function(renderer, doc) {
-      this.renderer = renderer;
-      this.doc = doc;
+      if (renderer && doc) {
+        this.renderer = renderer;
+        this.doc = doc;
+        window.outliner_controller.setForm();
+      } else {
+        var options = $('form').serializeObject();
+        this.renderer = options.renderer;
+        this.doc = options.doc;
+      }
       $.ajax({
         'url': 'data/' + this.doc + '.json',
         'dataType': 'json',
@@ -41,7 +49,7 @@
       } else {
         var template = "<textarea rows=30 cols=80>{{ data }}</textarea>";
         var data = { data: JSON.stringify(this.data, null, 2) };
-        var html = Flatstache.to_html(template, data);
+        var html = $.mustache(template, data);
         $('.doc').html(html);
       }
     }
@@ -51,6 +59,5 @@
     window.outliner_controller = new OutlinerController();
     Backbone.history.start();
     window.location.hash = window.location.hash;
-    window.outliner_controller.setForm();
   });
 })(jQuery);
