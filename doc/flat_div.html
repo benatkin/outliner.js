@@ -5,10 +5,13 @@
     <style type="text/css">
       div.level1 { margin-left: 1em; }
       div.level2 { margin-left: 2em; }
+      div.level1.unindented { margin-left: 0px; }
+      div.level2.unindented { margin-left: 0px; }
       span.key { font-weight: bold; }
     </style>
   </head>
   <body>
+    <h2>Regular</h2>
     <div class="outliner">
       <div class="level0">
         <span class="key" data-outliner-path="[]">root</span>
@@ -27,6 +30,32 @@
       <div class="level2" data-outliner-path="[&quot;location&quot;, &quot;state&quot;]]">
         <span class="key">state</span>
         <span class="value">CO</span>
+      </div>
+    </div>
+    
+    <h2>Unindented</h2>
+    <div class="outliner">
+      <div class="level0">
+        <span class="key" data-outliner-path="[]">root</span>
+      </div>
+      <div class="level1" data-outliner-path="[&quot;name&quot;]">
+        <span class="key">name</span>
+        <span class="value">Settler's Park</span>
+      </div>
+      <div class="level1" data-outliner-path="[&quot;location&quot;]">
+        <span class="key">location</span>
+      </div>
+      <div class="level2" data-outliner-path="[&quot;location&quot;, &quot;city&quot;]">
+        <span class="key">city</span>
+        <span class="value">Boulder</span>
+      </div>
+      <div class="level2 unindented" data-outliner-path="[&quot;location&quot;, &quot;state&quot;]]">
+        <span class="key">state</span>
+        <span class="value">CO</span>
+      </div>
+      <div class="level2" data-outliner-path="[&quot;location&quot;, &quot;state&quot;]]">
+        <span class="key">country</span>
+        <span class="value">USA</span>
       </div>
     </div>
   </body>
