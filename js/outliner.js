@@ -23,6 +23,28 @@
   } else {
     Outliner = this.Outliner = {};
   }
+  
+  Outliner.Model = function(value) {
+    this.value = value;
+  };
+  
+  _.extend(Outliner.Model.prototype, {
+    expand: function() {
+      if (typeof this.value === "object" && (! _.isEmpty(this.value))) {
+        if (_.isArray(this.value)) {
+          this.children = _.map(this.value, function(value) {
+            return new Outliner.Model(value).expand();
+          });
+        } else {
+          this.children = {};
+          _.each(this.value, function(value, key) {
+            this.children[key] = new Outliner.Model(value).expand();
+          }, this);
+        }
+      }
+      return this;
+    }
+  });
 
   Outliner.View = Backbone.View.extend({
     render: function() {

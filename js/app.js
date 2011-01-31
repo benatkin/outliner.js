@@ -21,7 +21,7 @@
       if (renderer && doc) {
         this.renderer = renderer;
         this.doc = doc;
-        window.outliner_controller.setForm();
+        this.setForm();
       } else {
         var options = $('form').serializeObject();
         this.renderer = options.renderer;
@@ -40,7 +40,7 @@
     render: function() {
       $('.doc').html('');
       if (this.renderer === 'outliner') {
-        this.model = new Backbone.Model({data: this.data});
+        this.model = new Outliner.Model(this.data);
         this.view = new Outliner.View({model: this.model});
         $(this.view.render().el).appendTo($('.doc'));
       } else if (this.renderer === 'keybubble') {
@@ -56,7 +56,7 @@
   });
 
   $(document).ready(function() {
-    window.outliner_controller = new OutlinerController();
+    window.controller = new OutlinerController();
     Backbone.history.start();
     window.location.hash = window.location.hash;
   });
