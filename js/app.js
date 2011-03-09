@@ -40,7 +40,7 @@
     render: function() {
       $('.doc').html('');
       if (this.renderer === 'outliner') {
-        this.model = new Outliner.Model(this.data);
+        this.model = new Outliner.Model({value: this.data});
         this.view = new Outliner.View({model: this.model});
         $(this.view.render().el).appendTo($('.doc'));
       } else if (this.renderer === 'keybubble') {

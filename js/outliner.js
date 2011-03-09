@@ -14,6 +14,10 @@
   if (typeof this.Backbone === 'undefined')
     Backbone = require('backbone');
   
+  var _ = this._;
+  if (typeof this._ === 'undefined')
+    _ = require('underscore');
+  
   // From Backbone.js
   // The top-level namespace. All public Outliner classes and modules will
   // be attached to this. Exported for both CommonJS and the browser.
@@ -24,31 +28,45 @@
     Outliner = this.Outliner = {};
   }
   
-  Outliner.Model = function(value) {
+  Outliner.Node = function(value) {
     this.value = value;
   };
   
-  _.extend(Outliner.Model.prototype, {
+  _.extend(Outliner.Node.prototype, {
     expand: function() {
       if (typeof this.value === "object" && (! _.isEmpty(this.value))) {
         if (_.isArray(this.value)) {
           this.children = _.map(this.value, function(value) {
-            return new Outliner.Model(value).expand();
+            return new Outliner.Node(value).expand();
           });
         } else {
           this.children = {};
           _.each(this.value, function(value, key) {
-            this.children[key] = new Outliner.Model(value).expand();
+            this.children[key] = new Outliner.Node(value).expand();
           }, this);
         }
       }
       return this;
+    },
+    render: function() {
+      if (this.children) {
+        this.children.each(function(node) {
+          node.render();
+        });
+      }
+      return this.html;
+    }
+  });
+  
+  Outliner.Model = Backbone.Model.extend({
+    render: function() {
+      return new Outliner.Node(this.get('value')).render();
     }
   });
 
   Outliner.View = Backbone.View.extend({
     render: function() {
-      $(this.el).html('');
+      $(this.el).html(this.model.render());
       return this;
     }
   });
