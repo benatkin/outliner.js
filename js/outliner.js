@@ -1,9 +1,7 @@
 (function($) {
   $.outliner = function($el, options) {
-    $el.html('');
-    var container = $('<div>').addClass('outliner').appendTo($el);
-    if (options.hideEmpty) removeEmpty(options.data);
-    this.appendCollection(container, 'root', options.data);
+    $el.html('').addClass('outliner');
+    this.appendCollection($el, 'root', options.data);
   }
 
   $.outliner.fn = $.outliner.prototype = {
@@ -59,11 +57,7 @@
   };
 
   $.fn.outliner = function(options) {
-    if (! $(this).data('outliner')) {
-      this.data('outliner', new($.outliner)($(this), options));
-    } else {
-      this.data('outliner').call(options);
-    }
+    this.data('outliner', new($.outliner)(this, options));
   };
 
 })(jQuery);
