@@ -1,9 +1,9 @@
-.keybubble .row {
+.outliner .row {
   padding-top: 0.2em;
   padding-bottom: 0.2em;
 }
 
-.keybubble .key {
+.outliner .key {
   background-color: #ddd;
   padding-left: 0.5em;
   padding-right: 0.5em;
@@ -11,41 +11,39 @@
   margin-right: 0.5em;
 }
 
-.keybubble .collectionKey {
+.outliner .collectionKey {
   background-color: black;
   color: white;
 }
 
-.keybubble .collectionItems {
+.outliner .collectionItems {
   margin-left: 1em;
 }
 
-.keybubble .leafValue.null, .keybubble .leafValue.empty {
+.outliner .leafValue.null, .outliner .leafValue.empty {
   color: #bbb;
 }
 
-.keybubble .leafValue.number {
+.outliner .leafValue.number {
   color: #d0d;
 }
 
-.keybubble .leafValue.string {
+.outliner .leafValue.string {
   color: #080;
 }
 
-.keybubble .leafValue.boolean {
+.outliner .leafValue.boolean {
   color: #880;
 }
 
-.keybubble .row {
+.outliner .row {
   clear: left;
 }
 
-.keybubble .leafKeyDiv {
+.outliner .leafKeyDiv {
   float: left;
 }
 
-.keybubble .leafValue {
+.outliner .leafValue {
   float: left;
 }
-
-

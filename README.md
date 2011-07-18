@@ -4,15 +4,19 @@ I'm working on a way to present JSON data, besides serializing it to a string. I
 
 ## TODO
 
-* Render with templates
+* Make API async
+* Render bigger objects (CouchOne pages)
+* Render multiline in a <pre>
+* Add autolink option
 * Collapsing and Expanding
-* Rendering string filter for syntax highlighting
-* Rendering string filter for links
-* Editing leaf values
-* Adding items to objects
-* Adding itmes to arrays
-* Removing itmes from objects and arrays
-* Changing types
+* Syntax highlighting post-render example
+* load URLs with a spinner
+* Edit leaf values
+* Add items to objects
+* Add items to arrays
+* Remove items from objects and arrays
+* Wrap a node in a list
+* Unwrap node(s) in a list
 
 ## License
 

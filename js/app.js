@@ -7,24 +7,21 @@
     },
     navigate: function() {
       var options = $('form').serializeObject();
-      window.location.hash = options.renderer + '/' + options.doc;
+      window.location.hash = options.doc;
     },
     setForm: function() {
-      $('select[name=renderer]').val(this.renderer);
       $('select[name=doc]').val(this.doc);
     },
     routes: {
-      ":renderer/:doc": "doc",
+      ":doc": "doc",
       "": "doc"
     },
-    doc: function(renderer, doc) {
-      if (renderer && doc) {
-        this.renderer = renderer;
+    doc: function(doc) {
+      if (doc) {
         this.doc = doc;
         this.setForm();
       } else {
         var options = $('form').serializeObject();
-        this.renderer = options.renderer;
         this.doc = options.doc;
       }
       $.ajax({
@@ -39,15 +36,8 @@
     },
     render: function() {
       $('.doc').html('');
-      if (this.renderer === 'keybubble') {
-        var options = {data: this.data};
-        $('.doc').keybubble(options);
-      } else {
-        var template = "<textarea rows=30 cols=80>{{ data }}</textarea>";
-        var data = { data: JSON.stringify(this.data, null, 2) };
-        var html = $.mustache(template, data);
-        $('.doc').html(html);
-      }
+      var options = {data: this.data};
+      $('.doc').outliner(options);
     }
   });
 

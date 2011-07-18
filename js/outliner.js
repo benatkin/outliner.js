@@ -5,7 +5,7 @@
     // init
     'init': function(options) {
       this.html('');
-      var container = $('<div>').addClass('keybubble').appendTo(this);
+      var container = $('<div>').addClass('outliner').appendTo(this);
       if (options.hideEmpty) removeEmpty(options.data);
       O.appendCollection.call(container, 'root', options.data);
     },
@@ -76,6 +76,6 @@
 
   O = f.init;
   $.extend(O, f);
-  $.fn.keybubble = O;
+  $.fn.outliner = O;
 
 })(jQuery);
