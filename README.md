@@ -6,7 +6,7 @@ I'm working on a way to present JSON data, besides serializing it to a string. I
 
 * Make API async
 * Render bigger objects (CouchOne pages)
-* Render multiline in a <pre>
+* Render multiline in a &lt;pre&gt;
 * Add autolink option
 * Collapsing and Expanding
 * Syntax highlighting post-render example
