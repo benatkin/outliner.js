@@ -23,14 +23,6 @@
     appendCollection: function($el, key, value) {
       var nodeType = this.nodeType(value);
       var container = $('<div>').appendTo($el).addClass('collection');
-
-      // construct collection row
-      var symbol = nodeType == "map" ? "{}" : "[]";
-      var collectionItem = $('<div>').appendTo($el).addClass(nodeType).addClass('collectionRow row');
-      var keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
-
-      // construct items
-      var items = $('<div>').appendTo($el).addClass('collectionItems');
       
       var i=0, key, keys, childValue;
 
@@ -45,6 +37,21 @@
       } else {
         keys = value;
       }
+
+      // construct collection row
+      var symbol = nodeType == "map" ? "{}" : "[]";
+      var collectionItem = $('<div>').appendTo($el).addClass(nodeType).addClass('collectionRow row');
+      
+      var keyElem;
+      if (keys.length > 0) {
+        keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
+      } else {
+        keyElem = $('<span>').appendTo(collectionItem).text(key).addClass('collectionKey key empty');
+        $('<span>').text(symbol).addClass('collectionValue empty').appendTo(collectionItem);
+      }
+
+      // construct items
+      var items = $('<div>').appendTo($el).addClass('collectionItems');
       
       for (i=0; i < keys.length; i++) {
         if (nodeType === 'map')

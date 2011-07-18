@@ -16,6 +16,15 @@
   color: white;
 }
 
+.outliner .collectionKey.empty {
+  background-color: #ddd;
+  color: black;
+}
+
+.outliner .collectionValue.empty {
+  color: #bbb;
+}
+
 .outliner .collectionItems {
   margin-left: 1em;
 }
