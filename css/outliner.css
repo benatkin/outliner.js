@@ -34,7 +34,7 @@
 }
 
 .outliner .leafValue.number {
-  color: #d0d;
+  color: #00008b;
 }
 
 .outliner .leafValue.string {
@@ -42,7 +42,7 @@
 }
 
 .outliner .leafValue.boolean {
-  color: #880;
+  color: #68228b;
 }
 
 .outliner .row {
