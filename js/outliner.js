@@ -1,14 +1,12 @@
 (function($) {
-  var O;
+  $.outliner = function($el, options) {
+    $el.html('');
+    var container = $('<div>').addClass('outliner').appendTo($el);
+    if (options.hideEmpty) removeEmpty(options.data);
+    this.appendCollection(container, 'root', options.data);
+  }
 
-  var f = {
-    // init
-    'init': function(options) {
-      this.html('');
-      var container = $('<div>').addClass('outliner').appendTo(this);
-      if (options.hideEmpty) removeEmpty(options.data);
-      O.appendCollection.call(container, 'root', options.data);
-    },
+  $.outliner.fn = $.outliner.prototype = {
     // determine types
     'nodeType': function(value) {
       return (value != null && typeof value === "object")
@@ -24,30 +22,31 @@
         return typeof value;
     },
     // element creation
-    'appendCollection': function(key, value) {
-      var nodeType = O.nodeType(value);
-      var container = $('<div>').appendTo(this).addClass('collection');
+    'appendCollection': function($el, key, value) {
+      var nodeType = this.nodeType(value);
+      var container = $('<div>').appendTo($el).addClass('collection');
 
       // construct collection row
       var symbol = nodeType == "map" ? "{}" : "[]";
-      var collectionItem = $('<div>').appendTo(this).addClass(nodeType).addClass('collectionRow row');
+      var collectionItem = $('<div>').appendTo($el).addClass(nodeType).addClass('collectionRow row');
       var keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
 
       // construct items
-      var items = $('<div>').appendTo(this).addClass('collectionItems');
+      var items = $('<div>').appendTo($el).addClass('collectionItems');
+      var that = this;
       _.each(value, function(value, key) {
-        if (O.nodeType(value) == 'leaf') {
-          O.appendLeaf.call(items, key, value);
+        if (that.nodeType(value) == 'leaf') {
+          that.appendLeaf(items, key, value);
         } else {
-          O.appendCollection.call(items, key, value);
+          that.appendCollection(items, key, value);
         }
       });
     },
-    'appendLeaf': function(key, value) {
-      var leafItem = $('<div>').appendTo(this).addClass('leafRow row');
+    'appendLeaf': function(items, key, value) {
+      var leafItem = $('<div>').appendTo(items).addClass('leafRow row');
       var keyDiv = $('<div>').appendTo(leafItem).addClass('leafKeyDiv');
       var keyElem = $('<span>').appendTo(keyDiv).text(key).addClass('leafKey key');
-      var leafType = O.leafType(value);
+      var leafType = this.leafType(value);
       if (value == null)
         value = "null";
       else if (value === "")
@@ -56,26 +55,15 @@
       if (leafType == "string") {
         valueElem.html(valueElem.html().replace("\n", "<br />"));
       }
-    },
-    // data manipulation
-    'removeEmpty': function(data) {
-      if (data != null && typeof data == "object") {
-        var empty = true;
-        $.each(data, function(key, value) {
-          if (removeEmpty(value) == false || value == null || value === "") {
-            delete data[key];
-          } else {
-            empty = false;
-          }
-        });
-        if (empty) return false;
-      }
-      return true;
     }
   };
 
-  O = f.init;
-  $.extend(O, f);
-  $.fn.outliner = O;
+  $.fn.outliner = function(options) {
+    if (! $(this).data('outliner')) {
+      this.data('outliner', new($.outliner)($(this), options));
+    } else {
+      this.data('outliner').call(options);
+    }
+  };
 
 })(jQuery);
