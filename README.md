@@ -18,6 +18,10 @@ I'm working on a way to present JSON data, besides serializing it to a string. I
 * Wrap a node in a list
 * Unwrap node(s) in a list
 
+## Credits
+
+* [js-naturalsort](http://code.google.com/p/js-naturalsort/source/browse/trunk/naturalSort.js): Jim Palmer, [Mike Grier](http://mgrier.com/), Clint Priest, Kyle Adams, guillermo
+
 ## License
 
-Copyright (c) 2010 Ben Atkin. Licensed under the terms of the MIT license.
+Copyright (c) 2010-2011 Ben Atkin. Licensed under the terms of the MIT license.
