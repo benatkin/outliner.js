@@ -6,12 +6,12 @@
 
   $.outliner.fn = $.outliner.prototype = {
     // determine types
-    'nodeType': function(value) {
+    nodeType: function(value) {
       return (value != null && typeof value === "object")
               ? (Object.prototype.toString.apply(value) === '[object Array]' ? 'list' : 'map')
               : 'leaf';
     },
-    'leafType': function(value) {
+    leafType: function(value) {
       if (value == null)
         return "null";
       else if (value === "")
@@ -20,7 +20,7 @@
         return typeof value;
     },
     // element creation
-    'appendCollection': function($el, key, value) {
+    appendCollection: function($el, key, value) {
       var nodeType = this.nodeType(value);
       var container = $('<div>').appendTo($el).addClass('collection');
 
@@ -31,19 +31,39 @@
 
       // construct items
       var items = $('<div>').appendTo($el).addClass('collectionItems');
-      var that = this;
-      _.each(value, function(value, key) {
-        if (that.nodeType(value) == 'leaf') {
-          that.appendLeaf(items, key, value);
-        } else {
-          that.appendCollection(items, key, value);
+      
+      var i=0, key, keys, childValue;
+
+      if (nodeType === 'map') {
+        keys = [];
+        for (var key in value) {
+          if (value.hasOwnProperty(key)) {
+            keys.push(key);
+          }
         }
-      });
+        keys.sort();
+      } else {
+        keys = value;
+      }
+      
+      for (i=0; i < keys.length; i++) {
+        if (nodeType === 'map')
+          key = keys[i];
+        else
+          key = i;
+        childValue = value[key];
+
+        if (this.nodeType(childValue) == 'leaf') {
+          this.appendLeaf(items, key, childValue);
+        } else {
+          this.appendCollection(items, key, childValue);
+        }
+      }
     },
-    'appendLeaf': function(items, key, value) {
+    appendLeaf: function(items, key, value) {
       var leafItem = $('<div>').appendTo(items).addClass('leafRow row');
       var keyDiv = $('<div>').appendTo(leafItem).addClass('leafKeyDiv');
-      var keyElem = $('<span>').appendTo(keyDiv).text(key).addClass('leafKey key');
+      var keyElem = $('<span>').appendTo(keyDiv).addClass('leafKey key').text(key);
       var leafType = this.leafType(value);
       if (value == null)
         value = "null";
