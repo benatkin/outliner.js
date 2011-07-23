@@ -1,12 +1,12 @@
 --- 
 - !ruby/object:Pomo::Task 
   complete: true
-  description: 
+  description: use underscore and backbone
   length: 25
   name: break apart into filter functions
 - !ruby/object:Pomo::Task 
   complete: true
-  description: 
+  description: use underscore and backbone
   length: 25
   name: break apart into filter functions
 - !ruby/object:Pomo::Task 
@@ -14,3 +14,8 @@
   description: 
   length: 25
   name: add linkification
+- !ruby/object:Pomo::Task 
+  complete: false
+  description: 
+  length: 25
+  name: build nodes
