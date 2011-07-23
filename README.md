@@ -18,6 +18,21 @@ I'm working on a way to present JSON data, besides serializing it to a string. I
 * Wrap a node in a list
 * Unwrap node(s) in a list
 
+I'm using [pomo](https://github.com/langhorst/pomo), and have added my .pomo file to this repo.
+
+## Dependencies
+
+### Current
+
+* underscore.js
+
+### Under consideration
+
+* backbone.js
+* DOMBuilder
+* Traverse
+* Eco templates
+
 ## Credits
 
 * [js-naturalsort](http://code.google.com/p/js-naturalsort/source/browse/trunk/naturalSort.js): Jim Palmer, [Mike Grier](http://mgrier.com/), Clint Priest, Kyle Adams, guillermo
