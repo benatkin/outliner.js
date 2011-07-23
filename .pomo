@@ -1,5 +1,10 @@
 --- 
 - !ruby/object:Pomo::Task 
+  complete: true
+  description: 
+  length: 25
+  name: break apart into filter functions
+- !ruby/object:Pomo::Task 
   complete: false
   description: 
   length: 25
