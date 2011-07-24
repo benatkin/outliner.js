@@ -19,3 +19,43 @@
   description: 
   length: 25
   name: build nodes
+- !ruby/object:Pomo::Task 
+  complete: true
+  description: 
+  length: 25
+  name: build list and map nodes
+- !ruby/object:Pomo::Task 
+  complete: true
+  description: 
+  length: 25
+  name: build list and map nodes
+- !ruby/object:Pomo::Task 
+  complete: true
+  description: 
+  length: 25
+  name: implement naturalSort in a Backbone collection
+- !ruby/object:Pomo::Task 
+  complete: true
+  description: 
+  length: 25
+  name: debug naturalSort in a Backbone Collection
+- !ruby/object:Pomo::Task 
+  complete: false
+  description: 
+  length: 25
+  name: build list and map nodes
+- !ruby/object:Pomo::Task 
+  complete: false
+  description: 
+  length: 25
+  name: use list and map nodes for rendering
+- !ruby/object:Pomo::Task 
+  complete: false
+  description: 
+  length: 25
+  name: add ids to html
+- !ruby/object:Pomo::Task 
+  complete: false
+  description: 
+  length: 25
+  name: implement collapsing and expanding
