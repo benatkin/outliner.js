@@ -36,7 +36,7 @@
     },
     render: function() {
       $('.doc').html('');
-      var outliner = new Outliner.Outline({data: this.data});
+      var outliner = new Outliner.ResourceModel({data: this.data});
       outliner.render($('.doc'));
     }
   });
