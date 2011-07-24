@@ -36,8 +36,8 @@
     },
     render: function() {
       $('.doc').html('');
-      var outliner = new Outliner.ResourceModel({data: this.data});
-      outliner.render($('.doc'));
+      this.resource = new Outliner.ResourceModel({data: this.data});
+      this.resource.render($('.doc'));
     }
   });
 

@@ -4,10 +4,6 @@ I'm working on a way to present JSON data, besides serializing it to a string. I
 
 ## TODO
 
-* Make API async
-* Render bigger objects (CouchOne pages)
-* Render multiline in a &lt;pre&gt;
-* Add autolink option
 * Collapsing and Expanding
 * Syntax highlighting post-render example
 * load URLs with a spinner
@@ -17,8 +13,7 @@ I'm working on a way to present JSON data, besides serializing it to a string. I
 * Remove items from objects and arrays
 * Wrap a node in a list
 * Unwrap node(s) in a list
-
-I'm using [pomo](https://github.com/langhorst/pomo), and have added my .pomo file to this repo.
+* Speed up node creation
 
 ## Dependencies
 
