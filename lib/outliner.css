@@ -47,12 +47,15 @@
 .outliner .leafValue.string.multiline {
   width: 95%;
   overflow-x: auto;  
+  border: 1px solid #bbb;
+  padding: 5px;
+}
+
+.outliner pre {
+  margin-top: 6px;
+  margin-bottom: 6px;
 }
 
 .outliner .leafValue.boolean {
   color: #68228b;
-}
-
-.outliner .row {
-  clear: left;
 }
