@@ -1,7 +1,7 @@
 {
   "author": "Ben Atkin <ben@benatkin.com> (http://benatkin.com/)",
   "name": "outliner",
-  "description": "a presentation and manipulation library for document data",
+  "description": "a couchapp for displaying data in an outline format",
   "version": "0.0.0",
   "homepage": "http://outlinerjs.com/",
   "repository": {
@@ -9,20 +9,17 @@
     "url": "git://github.com/benatkin/outliner.js.git"
   },
   "main": "lib/outliner",
-  "scripts": {
-    "preinstall": "coffee -o lib/ -c src/*.coffee",
-    "pretest": "coffee -o lib/ -c src/*.coffee",
-    "prestart": "coffee -o lib/ -c src/*.coffee",
-    "start": "node lib/server.js",
-    "test": "vows"
-  },
   "engines": {
     "node": ">=v0.4.8"
   },
+  "scripts": {
+    "push":  "couchapp push app.js $COUCH_URL",
+    "watch": "couchapp push app.js $COUCH_URL"
+  },
   "dependencies": {
-    "coffee-script": "v1.1.1",
     "underscore": "v1.1.7",
-    "traverse": "v0.4.6"
+    "traverse": "v0.4.6",
+    "couchapp": "v0.8.0"
   },
   "devDependencies": {}
 }
