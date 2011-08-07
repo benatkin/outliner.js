@@ -15,12 +15,17 @@
   "scripts": {
     "push":       "couchapp push app.js $COUCH_URL",
     "push-redir": "couchapp push redir.js $COUCH_URL",
-    "watch":      "couchapp sync app.js $COUCH_URL || true"
+    "watch":      "couchapp sync app.js $COUCH_URL || true",
+    "build-app":  "node build-app.js"
   },
   "dependencies": {
-    "underscore": "v1.1.7",
-    "traverse": "v0.4.6",
-    "couchapp": "v0.8.0"
+    "couchapp":   "*",
+    "underscore": "*",
+    "browserify": "*",
+    "shimify":    "*",
+    "seq":        "*",
+    "traverse":   "*",
+    "hashish":    "*"
   },
   "devDependencies": {}
 }
