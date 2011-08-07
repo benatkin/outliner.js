@@ -30,7 +30,7 @@
       this.leafType = "empty";
     else
       this.leafType = typeof value;
-  }
+  };
 
   _.extend(Outliner.Leaf.prototype, {
     type: 'leaf',
@@ -255,7 +255,7 @@
   // Include escapeHTML from Backbone.js for direct access
   var escapeHTML = function(string) {
     return string.replace(/&(?!\w+;|#\d+;|#x[\da-f]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27').replace(/\//g,'&#x2F;');
-  }
+  };
 
   /*     Underscore.js 1.1.7
    *     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
@@ -275,7 +275,7 @@
       comparator(this.criteria(array[mid]), this.criteria(model)) < 0 ? low = mid + 1 : high = mid;
     }
     return low;
-  }
+  };
 
   var sortBy2 = function(criteria, comparator) {
     return _.pluck(_.map(this.models, function(value, index, list) {
@@ -286,6 +286,6 @@
     }).sort(function(left, right) {
       return comparator(left.criteria, right.criteria);
     }), 'value');
-  }
+  };
 
 })(this);
