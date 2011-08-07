@@ -13,7 +13,7 @@
       $('select[name=doc]').val(this.doc);
     },
     routes: {
-      ":doc": "doc",
+      "*doc": "doc",
       "": "doc"
     },
     doc: function(doc) {
@@ -25,7 +25,7 @@
         this.doc = options.doc;
       }
       $.ajax({
-        'url': 'demo/data/' + this.doc + '.json',
+        'url': 'outliner/' + this.doc,
         'dataType': 'json',
         'success': this.docData
       });
