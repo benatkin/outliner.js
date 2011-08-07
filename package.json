@@ -13,8 +13,9 @@
     "node": ">=v0.4.8"
   },
   "scripts": {
-    "push":  "couchapp push app.js $COUCH_URL",
-    "watch": "couchapp watch app.js $COUCH_URL || true"
+    "push":       "couchapp push app.js $COUCH_URL",
+    "push-redir": "couchapp push redir.js $COUCH_URL",
+    "watch":      "couchapp watch app.js $COUCH_URL || true"
   },
   "dependencies": {
     "underscore": "v1.1.7",
