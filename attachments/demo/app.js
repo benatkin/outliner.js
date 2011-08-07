@@ -1,5 +1,5 @@
 (function($) {
-  window.OutlinerController = Backbone.Controller.extend({
+  window.OutlinerController = Backbone.Router.extend({
     initialize: function() {
       _.bindAll(this, 'docData', 'navigate');
 

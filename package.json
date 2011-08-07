@@ -25,7 +25,8 @@
     "shimify":    "*",
     "seq":        "*",
     "traverse":   "*",
-    "hashish":    "*"
+    "hashish":    "*",
+    "chainsaw":   "*"
   },
   "devDependencies": {}
 }
