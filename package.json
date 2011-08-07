@@ -15,7 +15,7 @@
   "scripts": {
     "push":       "couchapp push app.js $COUCH_URL",
     "push-redir": "couchapp push redir.js $COUCH_URL",
-    "watch":      "couchapp watch app.js $COUCH_URL || true"
+    "watch":      "couchapp sync app.js $COUCH_URL || true"
   },
   "dependencies": {
     "underscore": "v1.1.7",
