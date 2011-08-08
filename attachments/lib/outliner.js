@@ -17,6 +17,8 @@
   var Backbone = root.Backbone;
   if (!_ && (typeof require !== 'undefined')) Backbone = require('backbone');
 
+  var Traverse = require('traverse');
+
   Outliner.Leaf = function(attr) {
     this._attr = attr;
     this.key = attr.key;
@@ -103,6 +105,52 @@
     },
     type: 'resource',
     initialize: function(attributes, options) {
+      this.lastId = 0;
+      this.bind('change:data', this.build, this);
+      this.build();
+    },
+    build: function() {
+      var resource = this;
+      this.attributes.root = Traverse(this.attributes.data).map(function(value) {
+        this.after(function(value) {
+          var node;
+          if (this.isLeaf) {
+            node = {
+              value:    value,
+              type:     typeof value,
+              resource: resource
+            };
+          } else {
+            var keys = Object.keys(value);
+            node = {
+              type:     Array.isArray(value) ? 'array' : 'object',
+              empty:    keys.length === 0,
+              keys:     keys,
+              children: value,
+              resource: resource
+            };
+          }
+
+          this.update(node);
+        });
+      });
+
+      Traverse(this.attributes.root).forEach(function(node) {
+        this.before(function() {
+          if ((node.children || node.value) && this.parents.length !== 0) {
+            // skip a node
+            node.parent = this.parents[1].node;
+          }
+
+          if (node.children) {
+            // descend right into the children
+            this.keys = ['children'];
+          }
+          if (node.value) {
+            this.block();
+          }
+        });
+      });
     },
     render: function($el) {
       $el.html('').addClass('outliner');
