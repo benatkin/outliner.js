@@ -137,17 +137,18 @@
 
       Traverse(this.attributes.root).forEach(function(node) {
         this.before(function() {
-          if ((node.children || node.value) && this.parents.length !== 0) {
-            // skip a node
-            node.parent = this.parents[1].node;
-          }
-
-          if (node.children) {
-            // descend right into the children
-            this.keys = ['children'];
-          }
-          if (node.value) {
-            this.block();
+          if (this.depth % 2 === 0) {
+            if ((node.children || node.value) && this.parents.length !== 0) {
+              // skip a node
+              node.parent = this.parents[1].node;
+            }
+            if (node.children) {
+              // descend right into the children
+              this.keys = ['children'];
+            }
+            if (node.value) {
+              this.block();
+            }
           }
         });
       });
