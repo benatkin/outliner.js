@@ -106,8 +106,8 @@
     type: 'resource',
     initialize: function(attributes, options) {
       this.lastId = 0;
-      this.bind('change:data', this.build, this);
-      this.build();
+      //this.bind('change:data', this.build, this);
+      //this.build();
     },
     build: function() {
       var resource = this;
