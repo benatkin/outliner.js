@@ -25,7 +25,7 @@
         this.doc = options.doc;
       }
       $.ajax({
-        'url': 'outliner/' + this.doc,
+        'url': 'demo/data/' + this.doc + '.json',
         'dataType': 'json',
         'success': this.docData
       });
