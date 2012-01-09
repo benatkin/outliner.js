@@ -26,6 +26,8 @@
   }
 
   _.extend(Outliner.CollectionBuilder.prototype, {
+    collapseMarkup: "&#x25BE;", // ▾
+    expandMarkup: '&#x25B8;', // ▸
     // determine types
     nodeType: function(value) {
       return (value != null && typeof value === "object")
@@ -34,7 +36,7 @@
     },
     render: function($el, key, value) {
       var nodeType = this.nodeType(value);
-      var container = $('<div>').appendTo($el).addClass('collection');
+      var $container = $('<div>').appendTo($el).addClass('collection');
       
       var i=0, childKeys, childKey, childValue;
 
@@ -55,18 +57,19 @@
 
       // construct collection row
       var symbol = nodeType == "map" ? "{}" : "[]";
-      var collectionItem = $('<div>').appendTo($el).addClass(nodeType).addClass('collectionRow row');
+      var collectionItem = $('<div>').appendTo($container).addClass(nodeType).addClass('collectionRow row');
       
-      var keyElem;
+      var keyMarkup, keyElem;
+      keyMarkup = '<span class="collapse">' + this.collapseMarkup + '</span> ' + _.escape(key + ' ' + symbol)
       if (childKeys.length > 0) {
-        keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
+        keyElem = $('<span>').appendTo(collectionItem).html(keyMarkup).addClass('collectionKey key');
       } else {
         keyElem = $('<span>').appendTo(collectionItem).text(key).addClass('collectionKey key empty');
         $('<span>').text(symbol).addClass('collectionValue empty').appendTo(collectionItem);
       }
 
       // construct items
-      var $items = $('<div>').appendTo($el).addClass('collectionItems');
+      var $items = $('<div>').appendTo($container).addClass('collectionItems');
       
       for (i=0; i < childKeys.length; i++) {
         if (nodeType === 'map')
@@ -81,6 +84,12 @@
           this.resource.appendCollection($items, childKey, childValue);
         }
       }
+    },
+    toggleNode: function($el) {
+      var $items = $el.children('.collectionItems', $el);
+      $items.toggle();
+      var collapseMarkup = $items.is(':visible') ? this.collapseMarkup : this.expandMarkup;
+      $('.collapse', $el.children('.collectionRow')).html(collapseMarkup);
     }
   });
 
@@ -188,8 +197,15 @@
   });
 
   Outliner.ResourceView = Backbone.View.extend({
+    events: {
+      'click .collapse': 'toggleNode'
+    },
     render: function() {
       this.model.render($(this.el));
+    },
+    toggleNode: function(e) {
+      var $collection = $(e.target).closest('.collection')
+      this.model.collectionBuilder.toggleNode($collection);
     }
   });
 

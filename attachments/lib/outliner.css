@@ -21,6 +21,10 @@
   color: black;
 }
 
+.outliner .collectionKey .collapse {
+  cursor: pointer;
+}
+
 .outliner .collectionValue.empty {
   color: #bbb;
 }
