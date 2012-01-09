@@ -19,6 +19,71 @@
 
   var Traverse = require('traverse');
 
+  Outliner.CollectionBuilder = function(attr) {
+    attr = attr || {};
+    this.naturalSort = attr.naturalSort;
+    this.resource = attr.resource;
+  }
+
+  _.extend(Outliner.CollectionBuilder.prototype, {
+    // determine types
+    nodeType: function(value) {
+      return (value != null && typeof value === "object")
+              ? (Object.prototype.toString.apply(value) === '[object Array]' ? 'list' : 'map')
+              : 'leaf';
+    },
+    render: function($el, key, value) {
+      var nodeType = this.nodeType(value);
+      var container = $('<div>').appendTo($el).addClass('collection');
+      
+      var i=0, childKeys, childKey, childValue;
+
+      if (nodeType === 'map') {
+        childKeys = [];
+        for (var childKey in value) {
+          if (value.hasOwnProperty(childKey)) {
+            childKeys.push(childKey);
+          }
+        }
+        if (this.naturalSort)
+          childKeys.sort(naturalSort);
+        else
+          childKeys.sort();
+      } else {
+        childKeys = value;
+      }
+
+      // construct collection row
+      var symbol = nodeType == "map" ? "{}" : "[]";
+      var collectionItem = $('<div>').appendTo($el).addClass(nodeType).addClass('collectionRow row');
+      
+      var keyElem;
+      if (childKeys.length > 0) {
+        keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
+      } else {
+        keyElem = $('<span>').appendTo(collectionItem).text(key).addClass('collectionKey key empty');
+        $('<span>').text(symbol).addClass('collectionValue empty').appendTo(collectionItem);
+      }
+
+      // construct items
+      var $items = $('<div>').appendTo($el).addClass('collectionItems');
+      
+      for (i=0; i < childKeys.length; i++) {
+        if (nodeType === 'map')
+          childKey = childKeys[i];
+        else
+          childKey = i;
+        childValue = value[childKey];
+
+        if (this.nodeType(childValue) == 'leaf') {
+          this.resource.appendLeaf($items, childKey, childValue);
+        } else {
+          this.resource.appendCollection($items, childKey, childValue);
+        }
+      }
+    }
+  });
+
   Outliner.LeafBuilder = function(attr) {
   };
 
@@ -100,69 +165,23 @@
     type: 'resource',
     initialize: function(attributes, options) {
       this.lastId = 0;
+      this.configure();
+    },
+    configure: function() {
+      this.collectionBuilder = new Outliner.CollectionBuilder({
+        resource: this,
+        naturalSort: this.get('naturalSort')
+      });
       this.leafBuilder = new Outliner.LeafBuilder();
     },
     render: function($el) {
       $el.html('').addClass('outliner');
       this.appendCollection($el, this.get('rootKey'), this.get('data'));
     },
-    // determine types
-    nodeType: function(value) {
-      return (value != null && typeof value === "object")
-              ? (Object.prototype.toString.apply(value) === '[object Array]' ? 'list' : 'map')
-              : 'leaf';
+    appendCollection: function($el, key, value) {
+      this.collectionBuilder.render($el, key, value);
     },
     // element creation
-    appendCollection: function($el, key, value) {
-      var nodeType = this.nodeType(value);
-      var container = $('<div>').appendTo($el).addClass('collection');
-      
-      var i=0, childKeys, childKey, childValue;
-
-      if (nodeType === 'map') {
-        childKeys = [];
-        for (var childKey in value) {
-          if (value.hasOwnProperty(childKey)) {
-            childKeys.push(childKey);
-          }
-        }
-        if (this.get('naturalSort') === true)
-          childKeys.sort(naturalSort);
-        else
-          childKeys.sort();
-      } else {
-        childKeys = value;
-      }
-
-      // construct collection row
-      var symbol = nodeType == "map" ? "{}" : "[]";
-      var collectionItem = $('<div>').appendTo($el).addClass(nodeType).addClass('collectionRow row');
-      
-      var keyElem;
-      if (childKeys.length > 0) {
-        keyElem = $('<span>').appendTo(collectionItem).text(key + ' ' + symbol).addClass('collectionKey key');
-      } else {
-        keyElem = $('<span>').appendTo(collectionItem).text(key).addClass('collectionKey key empty');
-        $('<span>').text(symbol).addClass('collectionValue empty').appendTo(collectionItem);
-      }
-
-      // construct items
-      var $items = $('<div>').appendTo($el).addClass('collectionItems');
-      
-      for (i=0; i < childKeys.length; i++) {
-        if (nodeType === 'map')
-          childKey = childKeys[i];
-        else
-          childKey = i;
-        childValue = value[childKey];
-
-        if (this.nodeType(childValue) == 'leaf') {
-          this.appendLeaf($items, childKey, childValue);
-        } else {
-          this.appendCollection($items, childKey, childValue);
-        }
-      }
-    },
     appendLeaf: function($el, key, value) {
       $el.append(this.leafBuilder.render(key, value));
     }
