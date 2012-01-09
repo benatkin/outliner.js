@@ -35,9 +35,12 @@
       this.render();
     },
     render: function() {
-      $('.doc').html('');
-      this.resource = new Outliner.ResourceModel({data: this.data});
-      this.resource.render($('.doc'));
+      this.resourceModel = new Outliner.ResourceModel({data: this.data});
+      this.resourceView = new Outliner.ResourceView({
+        model: this.resourceModel,
+        el: $('.doc')
+      });
+      this.resourceView.render();
     }
   });
 

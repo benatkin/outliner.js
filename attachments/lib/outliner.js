@@ -19,24 +19,10 @@
 
   var Traverse = require('traverse');
 
-  Outliner.Leaf = function(attr) {
-    this._attr = attr;
-    this.key = attr.key;
-    this.value = attr.value;
-    this.resource = attr.resource;
-    this.parent = attr.parent;
-    var value = this.value;
-    if (value == null)
-      this.leafType = "null";
-    else if (value === "")
-      this.leafType = "empty";
-    else
-      this.leafType = typeof value;
+  Outliner.LeafBuilder = function(attr) {
   };
 
-  _.extend(Outliner.Leaf.prototype, {
-    type: 'leaf',
-
+  _.extend(Outliner.LeafBuilder.prototype, {
     // The underscore templates.
     templates: {
       link: '<a href="<%= url %>" class="leafValue <%= leafType %>"><%= value %></a>',
@@ -58,16 +44,24 @@
     },
 
     escape: function(attr) {
-      return escapeHTML(String(this[attr]));
+      return _.escape(String(this[attr]));
     },
 
     leafType: function() {
       
     },
 
-    renderValue: function() {
-      var value = this.value, leafType = this.leafType;
-      var tpl = this.templates.str, ctx = {leafType: this.escape('leafType'), value: this.escape('value')};
+    renderValue: function(key, value) {
+      var leafType = null;
+
+      if (value == null)
+        leafType = "null";
+      else if (value === "")
+        leafType = "empty";
+      else
+        leafType = typeof value;
+
+      var tpl = this.templates.str, ctx = {leafType: _.escape(leafType), value: _.escape(value)};
       var div = false;
       if (value == null) {
         ctx.value = 'null';
@@ -87,10 +81,10 @@
         return { span: html }
       }
     },
-    render: function() {
-      var rendered = this.renderValue();
+    render: function(key, value) {
+      var rendered = this.renderValue(key, value);
       var ctx = {
-        key: this.escape('key'),
+        key: _.escape(key),
         valueBlock: rendered.block || '',
         valueSpan: rendered.span || ''
       }
@@ -106,52 +100,7 @@
     type: 'resource',
     initialize: function(attributes, options) {
       this.lastId = 0;
-      //this.bind('change:data', this.build, this);
-      //this.build();
-    },
-    build: function() {
-      var resource = this;
-      this.attributes.root = Traverse(this.attributes.data).map(function(value) {
-        this.after(function(value) {
-          var node;
-          if (this.isLeaf) {
-            node = {
-              value:    value,
-              type:     typeof value,
-              resource: resource
-            };
-          } else {
-            var keys = Object.keys(value);
-            node = {
-              type:     Array.isArray(value) ? 'array' : 'object',
-              empty:    keys.length === 0,
-              keys:     keys,
-              children: value,
-              resource: resource
-            };
-          }
-
-          this.update(node);
-        });
-      });
-
-      Traverse(this.attributes.root).forEach(function(node) {
-        this.before(function() {
-          if (this.depth % 2 === 0) {
-            if ((node.children || node.value) && this.parents.length !== 0) {
-              // skip a node
-              node.parent = this.parents[1].node;
-            }
-            if (node.children) {
-              // descend right into the children
-              this.keys = ['children'];
-            }
-            if (node.value) {
-              this.block();
-            }
-          }
-        });
-      });
+      this.leafBuilder = new Outliner.LeafBuilder();
     },
     render: function($el) {
       $el.html('').addClass('outliner');
@@ -198,7 +147,7 @@
       }
 
       // construct items
-      var items = $('<div>').appendTo($el).addClass('collectionItems');
+      var $items = $('<div>').appendTo($el).addClass('collectionItems');
       
       for (i=0; i < childKeys.length; i++) {
         if (nodeType === 'map')
@@ -208,48 +157,25 @@
         childValue = value[childKey];
 
         if (this.nodeType(childValue) == 'leaf') {
-          this.appendLeaf(items, childKey, childValue);
+          this.appendLeaf($items, childKey, childValue);
         } else {
-          this.appendCollection(items, childKey, childValue);
+          this.appendCollection($items, childKey, childValue);
         }
       }
     },
-    appendLeaf: function(items, key, value) {
-      var leaf = new Outliner.Leaf({
-        key: key,
-        value: value
-      });
-      items.append(leaf.render());
+    appendLeaf: function($el, key, value) {
+      $el.append(this.leafBuilder.render(key, value));
+    }
+  });
+
+  Outliner.ResourceView = Backbone.View.extend({
+    render: function() {
+      this.model.render($(this.el));
     }
   });
 
   // Helpers
   // -------
-
-  /*  Copyright 2006 The Closure Library Authors. All Rights Reserved.
-   *    
-   *  Licensed under the Apache License, Version 2.0 (the "License");
-   *  you may not use this file except in compliance with the License.
-   *  You may obtain a copy of the License at
-   *    
-   *       http://www.apache.org/licenses/LICENSE-2.0
-   *    
-   *  Unless required by applicable law or agreed to in writing, software
-   *  distributed under the License is distributed on an "AS-IS" BASIS,
-   *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   *  See the License for the specific language governing permissions and
-   *  limitations under the License.
-   */
-  
-  /* goog.inherits http://code.google.com/p/closure-library/source/browse/trunk/closure/goog/base.js#1421 */
-  var inherits = function(childCtor, parentCtor) {
-    /** @constructor */
-    function tempCtor() {};
-    tempCtor.prototype = parentCtor.prototype;
-    childCtor.superClass_ = parentCtor.prototype;
-    childCtor.prototype = new tempCtor();
-    childCtor.prototype.constructor = childCtor;
-  };
 
   /*  Natural Sort algorithm for Javascript - Version 0.6 - Released under MIT license
    *  Author: Jim Palmer (based on chunking idea from Dave Koelle)
@@ -300,11 +226,6 @@
    *     For all details and documentation:
    *     http://documentcloud.github.com/backbone
    */
-
-  // Include escapeHTML from Backbone.js for direct access
-  var escapeHTML = function(string) {
-    return string.replace(/&(?!\w+;|#\d+;|#x[\da-f]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27').replace(/\//g,'&#x2F;');
-  };
 
   /*     Underscore.js 1.1.7
    *     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
