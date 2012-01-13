@@ -60,11 +60,12 @@
       var collectionItem = $('<div>').appendTo($container).addClass(nodeType).addClass('collectionRow row');
       
       var keyMarkup, keyElem;
-      keyMarkup = '<span class="collapse">' + this.collapseMarkup + '</span> ' + _.escape(key + ' ' + symbol)
       if (childKeys.length > 0) {
+        keyMarkup = '<span class="collapse">' + this.collapseMarkup + '</span> <span class="label">' + _.escape(key + ' ' + symbol) + "</span>";
         keyElem = $('<span>').appendTo(collectionItem).html(keyMarkup).addClass('collectionKey key');
       } else {
-        keyElem = $('<span>').appendTo(collectionItem).text(key).addClass('collectionKey key empty');
+        keyMarkup = '<span class="label">' + _.escape(key) + "</span>";
+        keyElem = $('<span>').appendTo(collectionItem).html(keyMarkup).addClass('collectionKey key empty');
         $('<span>').text(symbol).addClass('collectionValue empty').appendTo(collectionItem);
       }
 
@@ -90,6 +91,9 @@
       $items.toggle();
       var collapseMarkup = $items.is(':visible') ? this.collapseMarkup : this.expandMarkup;
       $('.collapse', $el.children('.collectionRow')).html(collapseMarkup);
+    },
+    selectNode: function($el) {
+      $el.find('.key').first().addClass('selected');
     }
   });
 
@@ -107,9 +111,9 @@
         '</div>'
       ].join("\n"),
       leaf: [
-        '<div class="leafRow row">',
-        '  <div class="leafKeyDiv leaf">',
-        '    <span class="leafKey key"><%= key %></span>',
+        '<div class="leafRow row leaf">',
+        '  <div class="leafKeyDiv">',
+        '    <span class="leafKey key"><span class="label"><%= key %></span></span>',
         '    <%= valueSpan %>',
         '  </div>',
         '  <%= valueBlock %>',
@@ -163,6 +167,9 @@
         valueSpan: rendered.span || ''
       }
       return _.template(this.templates.leaf, ctx);
+    },
+    selectNode: function($el) {
+      $el.find('.key').first().addClass('selected');
     }
   });
 
@@ -198,7 +205,8 @@
 
   Outliner.ResourceView = Backbone.View.extend({
     events: {
-      'click .collapse': 'toggleNode'
+      'click .collapse': 'toggleNode',
+      'click .label': 'selectNode'
     },
     render: function() {
       this.model.render($(this.el));
@@ -206,6 +214,15 @@
     toggleNode: function(e) {
       var $collection = $(e.target).closest('.collection')
       this.model.collectionBuilder.toggleNode($collection);
+    },
+    selectNode: function(e) {
+      this.$('.key.selected').removeClass('selected');
+      var $node = $(e.target).closest('.leaf, .collection');
+      if ($node.hasClass('collection')) {
+        this.model.collectionBuilder.selectNode($node);
+      } else {
+        this.model.leafBuilder.selectNode($node);
+      }
     }
   });
 

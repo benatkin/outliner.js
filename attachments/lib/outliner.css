@@ -11,18 +11,30 @@
   margin-right: 0.5em;
 }
 
+.key.selected {
+  background-color: #999;
+}
+
+.outliner .key .collapse {
+  cursor: pointer;
+}
+
+.outliner .key .collapse:hover {
+  color: blue;
+}
+
+.outliner .key .label {
+  cursor: pointer;
+}
+
+.outliner .key .label:hover {
+  color: blue;
+}
+
 .outliner .collectionKey {
-  background-color: black;
-  color: white;
 }
 
 .outliner .collectionKey.empty {
-  background-color: #ddd;
-  color: black;
-}
-
-.outliner .collectionKey .collapse {
-  cursor: pointer;
 }
 
 .outliner .collectionValue.empty {
