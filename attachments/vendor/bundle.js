@@ -1,27 +1,39 @@
-// vim:set ts=4 sts=4 sw=4 st:
-// -- kriskowal Kris Kowal Copyright (C) 2009-2010 MIT License
+// vim: ts=4 sts=4 sw=4 expandtab
+// -- kriskowal Kris Kowal Copyright (C) 2009-2011 MIT License
 // -- tlrobinson Tom Robinson Copyright (C) 2009-2010 MIT License (Narwhal Project)
-// -- dantman Daniel Friesen Copyright(C) 2010 XXX No License Specified
+// -- dantman Daniel Friesen Copyright (C) 2010 XXX TODO License or CLA
 // -- fschaefer Florian Schäfer Copyright (C) 2010 MIT License
-// -- Irakli Gozalishvili Copyright (C) 2010 MIT License
+// -- Gozala Irakli Gozalishvili Copyright (C) 2010 MIT License
+// -- kitcambridge Kit Cambridge Copyright (C) 2011 MIT License
+// -- kossnocorp Sasha Koss XXX TODO License or CLA
+// -- bryanforbes Bryan Forbes XXX TODO License or CLA
+// -- killdream Quildreen Motta XXX TODO License or CLA
+// -- michaelficarra Michael Ficarra Copyright (C) 2011 3-clause BSD License
+// -- sharkbrainguy Gerard Paapu Copyright (C) 2011 MIT License
+// -- bbqsrc Brendan Molloy XXX TODO License or CLA
+// -- iwyg XXX TODO License or CLA
+// -- DomenicDenicola Domenic Denicola XXX TODO License or CLA
+// -- xavierm02 Montillet Xavier XXX TODO License or CLA
+// -- Raynos Raynos XXX TODO License or CLA
+// -- samsonjs Sami Samhuri XXX TODO License or CLA
+// -- rwldrn Rick Waldron XXX TODO License or CLA
+// -- lexer Alexey Zakharov XXX TODO License or CLA
 
 /*!
     Copyright (c) 2009, 280 North Inc. http://280north.com/
     MIT License. http://github.com/280north/narwhal/blob/master/README.md
 */
 
+// Module systems magic dance
 (function (definition) {
     // RequireJS
-    if (typeof define === "function") {
-        define(function () {
-            definition();
-        });
+    if (typeof define == "function") {
+        define(definition);
     // CommonJS and <script>
     } else {
         definition();
     }
-
-})(function (undefined) {
+})(function () {
 
 /**
  * Brings an environment as close to ECMAScript 5 compliance
@@ -55,18 +67,16 @@
 // http://www.ecma-international.org/publications/files/drafts/tc39-2009-025.pdf
 
 if (!Function.prototype.bind) {
-    var slice = Array.prototype.slice;
     Function.prototype.bind = function bind(that) { // .length is 1
         // 1. Let Target be the this value.
         var target = this;
         // 2. If IsCallable(Target) is false, throw a TypeError exception.
-        // XXX this gets pretty close, for all intents and purposes, letting
-        // some duck-types slide
-        if (typeof target.apply !== "function" || typeof target.call !== "function")
-            return new TypeError();
+        if (typeof target != "function")
+            throw new TypeError(); // TODO message
         // 3. Let A be a new (possibly empty) internal list of all of the
         //   argument values provided after thisArg (arg1, arg2 etc), in order.
-        var args = slice.call(arguments);
+        // XXX slicedArgs will stand in for "A" if used
+        var args = slice.call(arguments, 1); // for normal call
         // 4. Let F be a new native ECMAScript object.
         // 9. Set the [[Prototype]] internal property of F to the standard
         //   built-in Function prototype object as specified in 15.3.3.1.
@@ -78,7 +88,7 @@ if (!Function.prototype.bind) {
         //   15.3.4.5.3.
         // 13. The [[Scope]] internal property of F is unused and need not
         //   exist.
-        function bound() {
+        var bound = function () {
 
             if (this instanceof bound) {
                 // 15.3.4.5.2 [[Construct]]
@@ -95,8 +105,16 @@ if (!Function.prototype.bind) {
                 //   list boundArgs in the same order followed by the same
                 //   values as the list ExtraArgs in the same order.
 
-                var self = Object.create(target.prototype);
-                target.apply(self, args.concat(slice.call(arguments)));
+                var F = function(){};
+                F.prototype = target.prototype;
+                var self = new F;
+
+                var result = target.apply(
+                    self,
+                    args.concat(slice.call(arguments))
+                );
+                if (result !== null && Object(result) === result)
+                    return result;
                 return self;
 
             } else {
@@ -119,23 +137,16 @@ if (!Function.prototype.bind) {
                 //   as the arguments.
 
                 // equiv: target.call(this, ...boundArgs, ...args)
-                return target.call.apply(
-                    target,
+                return target.apply(
+                    that,
                     args.concat(slice.call(arguments))
                 );
 
             }
 
-        }
-        bound.length = (
-            // 14. If the [[Class]] internal property of Target is "Function", then
-            typeof target === "function" ?
-            // a. Let L be the length property of Target minus the length of A.
-            // b. Set the length own property of F to either 0 or L, whichever is larger.
-            Math.max(target.length - args.length, 0) :
-            // 15. Else set the length own property of F to 0.
-            0
-        );
+        };
+        // XXX bound.length is never writable, so don't even try
+        //
         // 16. The length own property of F is given attributes as specified in
         //   15.3.5.1.
         // TODO
@@ -165,17 +176,22 @@ if (!Function.prototype.bind) {
 var call = Function.prototype.call;
 var prototypeOfArray = Array.prototype;
 var prototypeOfObject = Object.prototype;
+var slice = prototypeOfArray.slice;
+var toString = call.bind(prototypeOfObject.toString);
 var owns = call.bind(prototypeOfObject.hasOwnProperty);
 
-var defineGetter, defineSetter, lookupGetter, lookupSetter, supportsAccessors;
 // If JS engine supports accessors creating shortcuts.
-if ((supportsAccessors = owns(prototypeOfObject, '__defineGetter__'))) {
+var defineGetter;
+var defineSetter;
+var lookupGetter;
+var lookupSetter;
+var supportsAccessors;
+if ((supportsAccessors = owns(prototypeOfObject, "__defineGetter__"))) {
     defineGetter = call.bind(prototypeOfObject.__defineGetter__);
     defineSetter = call.bind(prototypeOfObject.__defineSetter__);
     lookupGetter = call.bind(prototypeOfObject.__lookupGetter__);
     lookupSetter = call.bind(prototypeOfObject.__lookupSetter__);
 }
-
 
 //
 // Array
@@ -185,18 +201,43 @@ if ((supportsAccessors = owns(prototypeOfObject, '__defineGetter__'))) {
 // ES5 15.4.3.2
 if (!Array.isArray) {
     Array.isArray = function isArray(obj) {
-        return Object.prototype.toString.call(obj) === "[object Array]";
+        return toString(obj) == "[object Array]";
     };
 }
 
+// The IsCallable() check in the Array functions
+// has been replaced with a strict check on the
+// internal class of the object to trap cases where
+// the provided function was actually a regular
+// expression literal, which in V8 and
+// JavaScriptCore is a typeof "function".  Only in
+// V8 are regular expression literals permitted as
+// reduce parameters, so it is desirable in the
+// general case for the shim to match the more
+// strict and common behavior of rejecting regular
+// expressions.
+
 // ES5 15.4.4.18
+// https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/array/foreach
 if (!Array.prototype.forEach) {
-    Array.prototype.forEach =  function forEach(block, thisObject) {
-        var len = +this.length;
-        for (var i = 0; i < len; i++) {
-            if (i in this) {
-                block.call(thisObject, this[i], i, this);
+    Array.prototype.forEach = function forEach(fun /*, thisp*/) {
+        var self = toObject(this),
+            thisp = arguments[1],
+            i = 0,
+            length = self.length >>> 0;
+
+        // If no callback function or if callback is not a callable function
+        if (toString(fun) != "[object Function]") {
+            throw new TypeError(); // TODO message
+        }
+
+        while (i < length) {
+            if (i in self) {
+                // Invoke the callback function with call, passing arguments:
+                // context, property value, property key, thisArg object context
+                fun.call(thisp, self[i], i, self);
             }
+            i++;
         }
     };
 }
@@ -205,51 +246,82 @@ if (!Array.prototype.forEach) {
 // https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/map
 if (!Array.prototype.map) {
     Array.prototype.map = function map(fun /*, thisp*/) {
-        var len = +this.length;
-        if (typeof fun !== "function")
-          throw new TypeError();
+        var self = toObject(this),
+            length = self.length >>> 0,
+            result = Array(length),
+            thisp = arguments[1];
 
-        var res = new Array(len);
-        var thisp = arguments[1];
-        for (var i = 0; i < len; i++) {
-            if (i in this)
-                res[i] = fun.call(thisp, this[i], i, this);
+        // If no callback function or if callback is not a callable function
+        if (toString(fun) != "[object Function]") {
+            throw new TypeError(); // TODO message
         }
 
-        return res;
+        for (var i = 0; i < length; i++) {
+            if (i in self)
+                result[i] = fun.call(thisp, self[i], i, self);
+        }
+        return result;
     };
 }
 
 // ES5 15.4.4.20
 if (!Array.prototype.filter) {
-    Array.prototype.filter = function filter(block /*, thisp */) {
-        var values = [];
-        var thisp = arguments[1];
-        for (var i = 0; i < this.length; i++)
-            if (block.call(thisp, this[i]))
-                values.push(this[i]);
-        return values;
+    Array.prototype.filter = function filter(fun /*, thisp */) {
+        var self = toObject(this),
+            length = self.length >>> 0,
+            result = [],
+            thisp = arguments[1];
+
+        // If no callback function or if callback is not a callable function
+        if (toString(fun) != "[object Function]") {
+            throw new TypeError(); // TODO message
+        }
+
+        for (var i = 0; i < length; i++) {
+            if (i in self && fun.call(thisp, self[i], i, self))
+                result.push(self[i]);
+        }
+        return result;
     };
 }
 
 // ES5 15.4.4.16
 if (!Array.prototype.every) {
-    Array.prototype.every = function every(block /*, thisp */) {
-        var thisp = arguments[1];
-        for (var i = 0; i < this.length; i++)
-            if (!block.call(thisp, this[i]))
+    Array.prototype.every = function every(fun /*, thisp */) {
+        var self = toObject(this),
+            length = self.length >>> 0,
+            thisp = arguments[1];
+
+        // If no callback function or if callback is not a callable function
+        if (toString(fun) != "[object Function]") {
+            throw new TypeError(); // TODO message
+        }
+
+        for (var i = 0; i < length; i++) {
+            if (i in self && !fun.call(thisp, self[i], i, self))
                 return false;
+        }
         return true;
     };
 }
 
 // ES5 15.4.4.17
+// https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/some
 if (!Array.prototype.some) {
-    Array.prototype.some = function some(block /*, thisp */) {
-        var thisp = arguments[1];
-        for (var i = 0; i < this.length; i++)
-            if (block.call(thisp, this[i]))
+    Array.prototype.some = function some(fun /*, thisp */) {
+        var self = toObject(this),
+            length = self.length >>> 0,
+            thisp = arguments[1];
+
+        // If no callback function or if callback is not a callable function
+        if (toString(fun) != "[object Function]") {
+            throw new TypeError(); // TODO message
+        }
+
+        for (var i = 0; i < length; i++) {
+            if (i in self && fun.call(thisp, self[i], i, self))
                 return true;
+        }
         return false;
     };
 }
@@ -258,107 +330,105 @@ if (!Array.prototype.some) {
 // https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/reduce
 if (!Array.prototype.reduce) {
     Array.prototype.reduce = function reduce(fun /*, initial*/) {
-        var len = +this.length;
-        // Whether to include (... || fun instanceof RegExp)
-        // in the following expression to trap cases where
-        // the provided function was actually a regular
-        // expression literal, which in V8 and
-        // JavaScriptCore is a typeof "function".  Only in
-        // V8 are regular expression literals permitted as
-        // reduce parameters, so it is desirable in the
-        // general case for the shim to match the more
-        // strict and common behavior of rejecting regular
-        // expressions.  However, the only case where the
-        // shim is applied is IE's Trident (and perhaps very
-        // old revisions of other engines).  In Trident,
-        // regular expressions are a typeof "object", so the
-        // following guard alone is sufficient.
-        if (typeof fun !== "function")
-            throw new TypeError();
+        var self = toObject(this),
+            length = self.length >>> 0;
+
+        // If no callback function or if callback is not a callable function
+        if (toString(fun) != "[object Function]") {
+            throw new TypeError(); // TODO message
+        }
 
         // no value to return if no initial value and an empty array
-        if (len === 0 && arguments.length === 1)
-            throw new TypeError();
+        if (!length && arguments.length == 1)
+            throw new TypeError(); // TODO message
 
         var i = 0;
+        var result;
         if (arguments.length >= 2) {
-            var rv = arguments[1];
+            result = arguments[1];
         } else {
             do {
-                if (i in this) {
-                    rv = this[i++];
+                if (i in self) {
+                    result = self[i++];
                     break;
                 }
 
                 // if array contains no values, no initial value to return
-                if (++i >= len)
-                    throw new TypeError();
+                if (++i >= length)
+                    throw new TypeError(); // TODO message
             } while (true);
         }
 
-        for (; i < len; i++) {
-            if (i in this)
-                rv = fun.call(null, rv, this[i], i, this);
+        for (; i < length; i++) {
+            if (i in self)
+                result = fun.call(void 0, result, self[i], i, self);
         }
 
-        return rv;
+        return result;
     };
 }
-
 
 // ES5 15.4.4.22
 // https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/reduceRight
 if (!Array.prototype.reduceRight) {
     Array.prototype.reduceRight = function reduceRight(fun /*, initial*/) {
-        var len = +this.length;
-        if (typeof fun !== "function")
-            throw new TypeError();
+        var self = toObject(this),
+            length = self.length >>> 0;
+
+        // If no callback function or if callback is not a callable function
+        if (toString(fun) != "[object Function]") {
+            throw new TypeError(); // TODO message
+        }
 
         // no value to return if no initial value, empty array
-        if (len === 0 && arguments.length === 1)
-            throw new TypeError();
+        if (!length && arguments.length == 1)
+            throw new TypeError(); // TODO message
 
-        var rv, i = len - 1;
+        var result, i = length - 1;
         if (arguments.length >= 2) {
-            rv = arguments[1];
+            result = arguments[1];
         } else {
             do {
-                if (i in this) {
-                    rv = this[i--];
+                if (i in self) {
+                    result = self[i--];
                     break;
                 }
 
                 // if array contains no values, no initial value to return
                 if (--i < 0)
-                    throw new TypeError();
+                    throw new TypeError(); // TODO message
             } while (true);
         }
 
-        for (; i >= 0; i--) {
+        do {
             if (i in this)
-                rv = fun.call(null, rv, this[i], i, this);
-        }
+                result = fun.call(void 0, result, self[i], i, self);
+        } while (i--);
 
-        return rv;
+        return result;
     };
 }
 
 // ES5 15.4.4.14
+// https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/indexOf
 if (!Array.prototype.indexOf) {
-    Array.prototype.indexOf = function indexOf(value /*, fromIndex */ ) {
-        var length = this.length;
+    Array.prototype.indexOf = function indexOf(sought /*, fromIndex */ ) {
+        var self = toObject(this),
+            length = self.length >>> 0;
+
         if (!length)
             return -1;
-        var i = arguments[1] || 0;
-        if (i >= length)
-            return -1;
-        if (i < 0)
-            i += length;
+
+        var i = 0;
+        if (arguments.length > 1)
+            i = toInteger(arguments[1]);
+
+        // handle negative indices
+        i = i >= 0 ? i : length - Math.abs(i);
         for (; i < length; i++) {
-            if (!(i in this))
-                continue;
-            if (value === this[i])
+            if (i in self && self[i] === sought) {
                 return i;
+            }
         }
         return -1;
     };
@@ -366,18 +436,19 @@ if (!Array.prototype.indexOf) {
 
 // ES5 15.4.4.15
 if (!Array.prototype.lastIndexOf) {
-    Array.prototype.lastIndexOf = function lastIndexOf(value /*, fromIndex */) {
-        var length = this.length;
+    Array.prototype.lastIndexOf = function lastIndexOf(sought /*, fromIndex */) {
+        var self = toObject(this),
+            length = self.length >>> 0;
+
         if (!length)
             return -1;
-        var i = arguments[1] || length;
-        if (i < 0)
-            i += length;
-        i = Math.min(i, length - 1);
+        var i = length - 1;
+        if (arguments.length > 1)
+            i = toInteger(arguments[1]);
+        // handle negative indices
+        i = i >= 0 ? i : length - Math.abs(i);
         for (; i >= 0; i--) {
-            if (!(i in this))
-                continue;
-            if (value === this[i])
+            if (i in self && sought === self[i])
                 return i;
         }
         return -1;
@@ -395,8 +466,11 @@ if (!Object.getPrototypeOf) {
     // http://ejohn.org/blog/objectgetprototypeof/
     // recommended by fschaefer on github
     Object.getPrototypeOf = function getPrototypeOf(object) {
-        return object.__proto__ || object.constructor.prototype;
-        // or undefined if not available in this engine
+        return object.__proto__ || (
+            object.constructor ?
+            object.constructor.prototype :
+            prototypeOfObject
+        );
     };
 }
 
@@ -405,11 +479,11 @@ if (!Object.getOwnPropertyDescriptor) {
     var ERR_NON_OBJECT = "Object.getOwnPropertyDescriptor called on a " +
                          "non-object: ";
     Object.getOwnPropertyDescriptor = function getOwnPropertyDescriptor(object, property) {
-        if ((typeof object !== "object" && typeof object !== "function") || object === null)
+        if ((typeof object != "object" && typeof object != "function") || object === null)
             throw new TypeError(ERR_NON_OBJECT + object);
         // If object does not owns property return undefined immediately.
         if (!owns(object, property))
-            return undefined;
+            return;
 
         var descriptor, getter, setter;
 
@@ -465,7 +539,7 @@ if (!Object.create) {
         if (prototype === null) {
             object = { "__proto__": null };
         } else {
-            if (typeof prototype !== "object")
+            if (typeof prototype != "object")
                 throw new TypeError("typeof prototype["+(typeof prototype)+"] != 'object'");
             var Type = function () {};
             Type.prototype = prototype;
@@ -476,24 +550,64 @@ if (!Object.create) {
             // objects created using `Object.create`
             object.__proto__ = prototype;
         }
-        if (typeof properties !== "undefined")
+        if (properties !== void 0)
             Object.defineProperties(object, properties);
         return object;
     };
 }
 
 // ES5 15.2.3.6
-if (!Object.defineProperty) {
+
+// Patch for WebKit and IE8 standard mode
+// Designed by hax <hax.github.com>
+// related issue: https://github.com/kriskowal/es5-shim/issues#issue/5
+// IE8 Reference:
+//     http://msdn.microsoft.com/en-us/library/dd282900.aspx
+//     http://msdn.microsoft.com/en-us/library/dd229916.aspx
+// WebKit Bugs:
+//     https://bugs.webkit.org/show_bug.cgi?id=36423
+
+function doesDefinePropertyWork(object) {
+    try {
+        Object.defineProperty(object, "sentinel", {});
+        return "sentinel" in object;
+    } catch (exception) {
+        // returns falsy
+    }
+}
+
+// check whether defineProperty works if it's given. Otherwise,
+// shim partially.
+if (Object.defineProperty) {
+    var definePropertyWorksOnObject = doesDefinePropertyWork({});
+    var definePropertyWorksOnDom = typeof document == "undefined" ||
+        doesDefinePropertyWork(document.createElement("div"));
+    if (!definePropertyWorksOnObject || !definePropertyWorksOnDom) {
+        var definePropertyFallback = Object.defineProperty;
+    }
+}
+
+if (!Object.defineProperty || definePropertyFallback) {
     var ERR_NON_OBJECT_DESCRIPTOR = "Property description must be an object: ";
     var ERR_NON_OBJECT_TARGET = "Object.defineProperty called on non-object: "
     var ERR_ACCESSORS_NOT_SUPPORTED = "getters & setters can not be defined " +
                                       "on this javascript engine";
 
     Object.defineProperty = function defineProperty(object, property, descriptor) {
-        if (typeof object !== "object" && typeof object !== "function")
+        if ((typeof object != "object" && typeof object != "function") || object === null)
             throw new TypeError(ERR_NON_OBJECT_TARGET + object);
-        if (typeof object !== "object" || object === null)
+        if ((typeof descriptor != "object" && typeof descriptor != "function") || descriptor === null)
             throw new TypeError(ERR_NON_OBJECT_DESCRIPTOR + descriptor);
+
+        // make a valiant attempt to use the real defineProperty
+        // for I8's DOM elements.
+        if (definePropertyFallback) {
+            try {
+                return definePropertyFallback.call(Object, object, property, descriptor);
+            } catch (exception) {
+                // try the shim if the real one doesn't work
+            }
+        }
 
         // If it's a data property.
         if (owns(descriptor, "value")) {
@@ -526,7 +640,7 @@ if (!Object.defineProperty) {
                 delete object[property];
                 object[property] = descriptor.value;
                 // Setting original `__proto__` back now.
-                object.prototype;
+                object.__proto__ = prototype;
             } else {
                 object[property] = descriptor.value;
             }
@@ -581,7 +695,7 @@ try {
 } catch (exception) {
     Object.freeze = (function freeze(freezeObject) {
         return function freeze(object) {
-            if (typeof object === "function") {
+            if (typeof object == "function") {
                 return object;
             } else {
                 return freezeObject(object);
@@ -617,7 +731,19 @@ if (!Object.isFrozen) {
 // ES5 15.2.3.13
 if (!Object.isExtensible) {
     Object.isExtensible = function isExtensible(object) {
-        return true;
+        // 1. If Type(O) is not Object throw a TypeError exception.
+        if (Object(object) === object) {
+            throw new TypeError(); // TODO message
+        }
+        // 2. Return the Boolean value of the [[Extensible]] internal property of O.
+        var name = '';
+        while (owns(object, name)) {
+            name += '?';
+        }
+        object[name] = true;
+        var returnValue = owns(object, name);
+        delete object[name];
+        return returnValue;
     };
 }
 
@@ -627,13 +753,13 @@ if (!Object.keys) {
 
     var hasDontEnumBug = true,
         dontEnums = [
-            'toString',
-            'toLocaleString',
-            'valueOf',
-            'hasOwnProperty',
-            'isPrototypeOf',
-            'propertyIsEnumerable',
-            'constructor'
+            "toString",
+            "toLocaleString",
+            "valueOf",
+            "hasOwnProperty",
+            "isPrototypeOf",
+            "propertyIsEnumerable",
+            "constructor"
         ],
         dontEnumsLength = dontEnums.length;
 
@@ -642,10 +768,7 @@ if (!Object.keys) {
 
     Object.keys = function keys(object) {
 
-        if (
-            typeof object !== "object" && typeof object !== "function"
-            || object === null
-        )
+        if ((typeof object != "object" && typeof object != "function") || object === null)
             throw new TypeError("Object.keys called on a non-object");
 
         var keys = [];
@@ -675,18 +798,28 @@ if (!Object.keys) {
 //
 
 // ES5 15.9.5.43
-// Format a Date object as a string according to a subset of the ISO-8601 standard.
-// Useful in Atom, among other things.
+// Format a Date object as a string according to a simplified subset of the ISO 8601
+// standard as defined in 15.9.1.15.
 if (!Date.prototype.toISOString) {
     Date.prototype.toISOString = function toISOString() {
-        return (
-            this.getUTCFullYear() + "-" +
-            (this.getUTCMonth() + 1) + "-" +
-            this.getUTCDate() + "T" +
-            this.getUTCHours() + ":" +
-            this.getUTCMinutes() + ":" +
-            this.getUTCSeconds() + "Z"
-        );
+        var result, length, value;
+        if (!isFinite(this))
+            throw new RangeError;
+
+        // the date time string format is specified in 15.9.1.15.
+        result = [this.getUTCFullYear(), this.getUTCMonth() + 1, this.getUTCDate(),
+            this.getUTCHours(), this.getUTCMinutes(), this.getUTCSeconds()];
+
+        length = result.length;
+        while (length--) {
+            value = result[length];
+            // pad months, days, hours, minutes, and seconds to have two digits.
+            if (value < 10)
+                result[length] = "0" + value;
+        }
+        // pad milliseconds to have three digits.
+        return result.slice(0, 3).join("-") + "T" + result.slice(3).join(":") + "." +
+            ("000" + this.getUTCMilliseconds()).slice(-3) + "Z";
     }
 }
 
@@ -712,8 +845,8 @@ if (!Date.prototype.toJSON) {
         // 4. Let toISO be the result of calling the [[Get]] internal method of
         // O with argument "toISOString".
         // 5. If IsCallable(toISO) is false, throw a TypeError exception.
-        if (typeof this.toISOString !== "function")
-            throw new TypeError();
+        if (typeof this.toISOString != "function")
+            throw new TypeError(); // TODO message
         // 6. Return the result of calling the [[Call]] internal method of
         // toISO with O as the this value and an empty argument list.
         return this.toISOString();
@@ -734,16 +867,16 @@ if (!Date.prototype.toJSON) {
 // Date.parse
 // based on work shared by Daniel Friesen (dantman)
 // http://gist.github.com/303249
-if (isNaN(Date.parse("T00:00"))) {
+if (isNaN(Date.parse("2011-06-15T21:40:05+06:00"))) {
     // XXX global assignment won't work in embeddings that use
     // an alternate object for the context.
     Date = (function(NativeDate) {
 
         // Date.length === 7
-        var Date = function(Y, M, D, h, m, s, ms) {
+        var Date = function Date(Y, M, D, h, m, s, ms) {
             var length = arguments.length;
             if (this instanceof NativeDate) {
-                var date = length === 1 && String(Y) === Y ? // isString(Y)
+                var date = length == 1 && String(Y) === Y ? // isString(Y)
                     // We explicitly pass it through parse:
                     new NativeDate(Date.parse(Y)) :
                     // We have to manually make calls depending on argument
@@ -763,33 +896,27 @@ if (isNaN(Date.parse("T00:00"))) {
             return NativeDate.apply(this, arguments);
         };
 
-        // 15.9.1.15 Date Time String Format
+        // 15.9.1.15 Date Time String Format. This pattern does not implement
+        // extended years (15.9.1.15.1), as `Date.UTC` cannot parse them.
         var isoDateExpression = new RegExp("^" +
-            "(?:" + // optional year-month-day
-                "(" + // year capture
-                    "(?:[+-]\\d\\d)?" + // 15.9.1.15.1 Extended years
-                    "\\d\\d\\d\\d" + // four-digit year
-                ")" +
-                "(?:-" + // optional month-day
-                    "(\\d\\d)" + // month capture
-                    "(?:-" + // optional day
-                        "(\\d\\d)" + // day capture
-                    ")?" +
+            "(\\d{4})" + // four-digit year capture
+            "(?:-(\\d{2})" + // optional month capture
+            "(?:-(\\d{2})" + // optional day capture
+            "(?:" + // capture hours:minutes:seconds.milliseconds
+                "T(\\d{2})" + // hours capture
+                ":(\\d{2})" + // minutes capture
+                "(?:" + // optional :seconds.milliseconds
+                    ":(\\d{2})" + // seconds capture
+                    "(?:\\.(\\d{3}))?" + // milliseconds capture
                 ")?" +
-            ")?" +
-            "(?:T" + // hour:minute:second.subsecond
-                "(\\d\\d)" + // hour capture
-                ":(\\d\\d)" + // minute capture
-                "(?::" + // optional :second.subsecond
-                    "(\\d\\d)" + // second capture
-                    "(?:\\.(\\d\\d\\d))?" + // milisecond capture
-                ")?" +
-            ")?" +
-            "(?:" + // time zone
+            "(?:" + // capture UTC offset component
                 "Z|" + // UTC capture
-                "([+-])(\\d\\d):(\\d\\d)" + // timezone offset
-                // capture sign, hour, minute
-            ")?" +
+                "(?:" + // offset specifier +/-hours:minutes
+                    "([-+])" + // sign capture
+                    "(\\d{2})" + // hours offset capture
+                    ":(\\d{2})" + // minutes offset capture
+                ")" +
+            ")?)?)?)?" +
         "$");
 
         // Copy any custom methods a 3rd party library may have added
@@ -802,42 +929,39 @@ if (isNaN(Date.parse("T00:00"))) {
         Date.prototype = NativeDate.prototype;
         Date.prototype.constructor = Date;
 
-        // Upgrade Date.parse to handle the ISO dates we use
-        // TODO review specification to ascertain whether it is
-        // necessary to implement partial ISO date strings.
+        // Upgrade Date.parse to handle simplified ISO 8601 strings
         Date.parse = function parse(string) {
             var match = isoDateExpression.exec(string);
             if (match) {
                 match.shift(); // kill match[0], the full match
-                // recognize times without dates before normalizing the
-                // numeric values, for later use
-                var timeOnly = match[0] === undefined;
-                // parse numerics
-                for (var i = 0; i < 10; i++) {
-                    // skip + or - for the timezone offset
-                    if (i === 7)
-                        continue;
-                    // Note: parseInt would read 0-prefix numbers as
-                    // octal.  Number constructor or unary + work better
-                    // here:
+                // parse months, days, hours, minutes, seconds, and milliseconds
+                for (var i = 1; i < 7; i++) {
+                    // provide default values if necessary
                     match[i] = +(match[i] || (i < 3 ? 1 : 0));
                     // match[1] is the month. Months are 0-11 in JavaScript
-                    // Date objects, but 1-12 in ISO notation, so we
+                    // `Date` objects, but 1-12 in ISO notation, so we
                     // decrement.
-                    if (i === 1)
+                    if (i == 1)
                         match[i]--;
                 }
-                // if no year-month-date is provided, return a milisecond
-                // quantity instead of a UTC date number value.
-                if (timeOnly)
-                    return ((match[3] * 60 + match[4]) * 60 + match[5]) * 1000 + match[6];
 
-                // account for an explicit time zone offset if provided
-                var offset = (match[8] * 60 + match[9]) * 60 * 1000;
-                if (match[6] === "-")
-                    offset = -offset;
+                // parse the UTC offset component
+                var minuteOffset = +match.pop(), hourOffset = +match.pop(), sign = match.pop();
 
-                return NativeDate.UTC.apply(this, match.slice(0, 7)) + offset;
+                // compute the explicit time zone offset if specified
+                var offset = 0;
+                if (sign) {
+                    // detect invalid offsets and return early
+                    if (hourOffset > 23 || minuteOffset > 59)
+                        return NaN;
+
+                    // express the provided time zone offset in minutes. The offset is
+                    // negative for time zones west of UTC; positive otherwise.
+                    offset = (hourOffset * 60 + minuteOffset) * 6e4 * (sign == "+" ? -1 : 1);
+                }
+
+                // compute a new UTC date value, accounting for the optional offset
+                return NativeDate.UTC.apply(this, match) + offset;
             }
             return NativeDate.parse.apply(this, arguments);
         };
@@ -852,15 +976,48 @@ if (isNaN(Date.parse("T00:00"))) {
 //
 
 // ES5 15.5.4.20
-if (!String.prototype.trim) {
+var ws = "\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003" +
+    "\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028" +
+    "\u2029\uFEFF";
+if (!String.prototype.trim || ws.trim()) {
     // http://blog.stevenlevithan.com/archives/faster-trim-javascript
-    var trimBeginRegexp = /^\s\s*/;
-    var trimEndRegexp = /\s\s*$/;
+    // http://perfectionkills.com/whitespace-deviations/
+    ws = "[" + ws + "]";
+    var trimBeginRegexp = new RegExp("^" + ws + ws + "*"),
+        trimEndRegexp = new RegExp(ws + ws + "*$");
     String.prototype.trim = function trim() {
-        return String(this).replace(trimBeginRegexp, '').replace(trimEndRegexp, '');
+        return String(this).replace(trimBeginRegexp, "").replace(trimEndRegexp, "");
     };
 }
 
+//
+// Util
+// ======
+//
+
+// http://jsperf.com/to-integer
+var toInteger = function (n) {
+    n = +n;
+    if (n !== n) // isNaN
+        n = -1;
+    else if (n !== 0 && n !== (1/0) && n !== -(1/0))
+        n = (n > 0 || -1) * Math.floor(Math.abs(n));
+    return n;
+};
+
+var prepareString = "a"[0] != "a",
+    // ES5 9.9
+    toObject = function (o) {
+        if (o == null) { // this matches both null and undefined
+            throw new TypeError(); // TODO message
+        }
+        // If the implementation doesn't support by-index access of
+        // string characters (ex. IE < 7), split the string
+        if (prepareString && typeof o == "string" && o) {
+            return o.split("");
+        }
+        return Object(o);
+    };
 });
 
 var require = function (file, cwd) {
@@ -872,25 +1029,24 @@ var require = function (file, cwd) {
     var res = mod._cached ? mod._cached : mod();
     return res;
 }
-var __require = require;
 
 require.paths = [];
 require.modules = {};
 require.extensions = [".js",".coffee"];
 
+require._core = {
+    'assert': true,
+    'events': true,
+    'fs': true,
+    'path': true,
+    'vm': true
+};
+
 require.resolve = (function () {
-    var core = {
-        'assert': true,
-        'events': true,
-        'fs': true,
-        'path': true,
-        'vm': true
-    };
-    
     return function (x, cwd) {
         if (!cwd) cwd = '/';
         
-        if (core[x]) return x;
+        if (require._core[x]) return x;
         var path = require.modules.path();
         var y = cwd || '.';
         
@@ -981,24 +1137,83 @@ require.alias = function (from, to) {
     }
     var basedir = path.dirname(res);
     
-    Object.keys(require.modules)
-        .forEach(function (x) {
-            if (x.slice(0, basedir.length + 1) === basedir + '/') {
-                var f = x.slice(basedir.length);
-                require.modules[to + f] = require.modules[basedir + f];
-            }
-            else if (x === basedir) {
-                require.modules[to] = require.modules[basedir];
-            }
-        })
+    var keys = (Object.keys || function (obj) {
+        var res = [];
+        for (var key in obj) res.push(key)
+        return res;
+    })(require.modules);
+    
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (key.slice(0, basedir.length + 1) === basedir + '/') {
+            var f = key.slice(basedir.length);
+            require.modules[to + f] = require.modules[basedir + f];
+        }
+        else if (key === basedir) {
+            require.modules[to] = require.modules[basedir];
+        }
+    }
+};
+
+require.define = function (filename, fn) {
+    var dirname = require._core[filename]
+        ? ''
+        : require.modules.path().dirname(filename)
     ;
+    
+    var require_ = function (file) {
+        return require(file, dirname)
+    };
+    require_.resolve = function (name) {
+        return require.resolve(name, dirname);
+    };
+    require_.modules = require.modules;
+    require_.define = require.define;
+    var module_ = { exports : {} };
+    
+    require.modules[filename] = function () {
+        require.modules[filename]._cached = module_.exports;
+        fn.call(
+            module_.exports,
+            require_,
+            module_,
+            module_.exports,
+            dirname,
+            filename
+        );
+        require.modules[filename]._cached = module_.exports;
+        return module_.exports;
+    };
 };
 
 if (typeof process === 'undefined') process = {};
 
-if (!process.nextTick) process.nextTick = function (fn) {
-    setTimeout(fn, 0);
-};
+if (!process.nextTick) process.nextTick = (function () {
+    var queue = [];
+    var canPost = typeof window !== 'undefined'
+        && window.postMessage && window.addEventListener
+    ;
+    
+    if (canPost) {
+        window.addEventListener('message', function (ev) {
+            if (ev.source === window && ev.data === 'browserify-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+    }
+    
+    return function (fn) {
+        if (canPost) {
+            queue.push(fn);
+            window.postMessage('browserify-tick', '*');
+        }
+        else setTimeout(fn, 0);
+    };
+})();
 
 if (!process.title) process.title = 'browser';
 
@@ -1009,25 +1224,16 @@ if (!process.binding) process.binding = function (name) {
 
 if (!process.cwd) process.cwd = function () { return '.' };
 
-require.modules["path"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = ".";
-    var __filename = "path";
-    
-    var require = function (file) {
-        return __require(file, ".");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, ".");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["path"]._cached = module.exports;
-    
-    (function () {
-        // resolves . and .. elements in a path array with directory names there
+require.define("path", function (require, module, exports, __dirname, __filename) {
+    function filter (xs, fn) {
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        if (fn(xs[i], i, xs)) res.push(xs[i]);
+    }
+    return res;
+}
+
+// resolves . and .. elements in a path array with directory names there
 // must be no slashes, empty elements, or device names (c:\) in the array
 // (so also no leading and trailing slashes - it does not distinguish
 // relative and absolute paths)
@@ -1085,7 +1291,7 @@ for (var i = arguments.length; i >= -1 && !resolvedAbsolute; i--) {
 // handle relative paths to be safe (might happen when process.cwd() fails)
 
 // Normalize the path
-resolvedPath = normalizeArray(resolvedPath.split('/').filter(function(p) {
+resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
     return !!p;
   }), !resolvedAbsolute).join('/');
 
@@ -1099,7 +1305,7 @@ var isAbsolute = path.charAt(0) === '/',
     trailingSlash = path.slice(-1) === '/';
 
 // Normalize the path
-path = normalizeArray(path.split('/').filter(function(p) {
+path = normalizeArray(filter(path.split('/'), function(p) {
     return !!p;
   }), !isAbsolute).join('/');
 
@@ -1117,7 +1323,7 @@ path = normalizeArray(path.split('/').filter(function(p) {
 // posix version
 exports.join = function() {
   var paths = Array.prototype.slice.call(arguments, 0);
-  return exports.normalize(paths.filter(function(p, index) {
+  return exports.normalize(filter(paths, function(p, index) {
     return p && typeof p === 'string';
   }).join('/'));
 };
@@ -1153,57 +1359,15 @@ exports.basename = function(path, ext) {
 exports.extname = function(path) {
   return splitPathRe.exec(path)[3] || '';
 };
-;
-    }).call(module.exports);
-    
-    __require.modules["path"]._cached = module.exports;
-    return module.exports;
-};
 
-require.modules["/node_modules/seq/package.json"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/seq";
-    var __filename = "/node_modules/seq/package.json";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/seq");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/seq");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/seq/package.json"]._cached = module.exports;
-    
-    (function () {
-        module.exports = {"name":"seq","version":"0.3.3","description":"Chainable asynchronous flow control with sequential and parallel primitives and pipeline-style error handling","main":"./index.js","repository":{"type":"git","url":"http://github.com/substack/node-seq.git"},"dependencies":{"chainsaw":">=0.0.7 <0.1","hashish":">=0.0.2 <0.1"},"devDependencies":{"expresso":"=0.7.x"},"script":{"test":"expresso"},"keywords":["flow-control","flow","control","async","asynchronous","chain","pipeline","sequence","sequential","parallel","error"],"author":{"name":"James Halliday","email":"mail@substack.net","url":"http://substack.net"},"license":"MIT/X11","engine":{"node":">=0.4.0"}};
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/seq/package.json"]._cached = module.exports;
-    return module.exports;
-};
+});
 
-require.modules["/node_modules/seq/index.js"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/seq";
-    var __filename = "/node_modules/seq/index.js";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/seq");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/seq");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/seq/index.js"]._cached = module.exports;
-    
-    (function () {
-        var EventEmitter = require('events').EventEmitter;
+require.define("/node_modules/seq/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"main":"./index.js"}
+});
+
+require.define("/node_modules/seq/index.js", function (require, module, exports, __dirname, __filename) {
+    var EventEmitter = require('events').EventEmitter;
 var Hash = require('hashish');
 var Chainsaw = require('chainsaw');
 
@@ -1501,14 +1665,15 @@ function builder (saw, xs) {
     
     this.seqMap = function (cb) {
         var res = [];
-        var len = context.stack.length;
+        var lastIdx = context.stack.length - 1;
         
         this.seqEach(function (x, i) {
             var self = this;
             
             var next = function () {
                 res[i] = arguments[1];
-                if (i == len - 1) context.stack = res;
+                if (i === lastIdx)
+                    context.stack = res;
                 self.apply(self, arguments);
             };
             
@@ -1521,6 +1686,8 @@ function builder (saw, xs) {
             next.into = function (key) {
                 return function () {
                     res[key] = arguments[1];
+                    if (i === lastIdx)
+                        context.stack = res;
                     self.apply(self, arguments);
                 };
             };
@@ -1535,7 +1702,112 @@ function builder (saw, xs) {
         });
     };
     
-    [ 'forEach', 'seqEach', 'parEach', 'seqMap', 'parMap' ]
+    /**
+     * Consumes any errors that occur in `cb`. Calls to `this.into(i)` will place
+     * that value, if accepted by the filter, at the index in the results as
+     * if it were the i-th index before filtering. (This means it will never 
+     * override another value, and will only actually appear at i if the filter
+     * accepts all values before i.)
+     */
+    this.parFilter = function (limit, cb) {
+        var res = [];
+        var len = context.stack.length;
+        if (cb === undefined) { cb = limit; limit = len }
+        var res = [];
+        
+        Seq()
+            .extend(context.stack)
+            .parEach(limit, function (x, i) {
+                var self = this;
+                
+                var next = function (err, ok) {
+                    if (!err && ok)
+                        res.push([i, x]);
+                    arguments[0] = null; // discard errors
+                    self.apply(self, arguments);
+                };
+                
+                next.stack = self.stack;
+                next.stack_ = self.stack_;
+                next.vars = self.vars;
+                next.args = self.args;
+                next.error = self.error;
+                
+                next.into = function (key) {
+                    return function (err, ok) {
+                        if (!err && ok)
+                            res.push([key, x]);
+                        arguments[0] = null; // discard errors
+                        self.apply(self, arguments);
+                    };
+                };
+                
+                next.ok = function () {
+                    var args = [].slice.call(arguments);
+                    args.unshift(null);
+                    return next.apply(next, args);
+                };
+                
+                cb.apply(next, arguments);
+            })
+            .seq(function () {
+                context.stack = res.sort().map(function(pair){ return pair[1]; });
+                saw.next();
+            })
+        ;
+    };
+    
+    /**
+     * Consumes any errors that occur in `cb`. Calls to `this.into(i)` will place
+     * that value, if accepted by the filter, at the index in the results as
+     * if it were the i-th index before filtering. (This means it will never 
+     * override another value, and will only actually appear at i if the filter
+     * accepts all values before i.)
+     */
+    this.seqFilter = function (cb) {
+        var res = [];
+        var lastIdx = context.stack.length - 1;
+        
+        this.seqEach(function (x, i) {
+            var self = this;
+            
+            var next = function (err, ok) {
+                if (!err && ok)
+                    res.push([i, x]);
+                if (i === lastIdx)
+                    context.stack = res.sort().map(function(pair){ return pair[1]; });
+                arguments[0] = null; // discard errors
+                self.apply(self, arguments);
+            };
+            
+            next.stack = self.stack;
+            next.stack_ = self.stack_;
+            next.vars = self.vars;
+            next.args = self.args;
+            next.error = self.error;
+            
+            next.into = function (key) {
+                return function (err, ok) {
+                    if (!err && ok)
+                        res.push([key, x]);
+                    if (i === lastIdx)
+                        context.stack = res.sort().map(function(pair){ return pair[1]; });
+                    arguments[0] = null; // discard errors
+                    self.apply(self, arguments);
+                };
+            };
+            
+            next.ok = function () {
+                var args = [].slice.call(arguments);
+                args.unshift(null);
+                return next.apply(next, args);
+            };
+            
+            cb.apply(next, arguments);
+        });
+    };
+    
+    [ 'forEach', 'seqEach', 'parEach', 'seqMap', 'parMap', 'seqFilter', 'parFilter' ]
         .forEach(function (name) {
             this[name + '_'] = function (cb) {
                 this[name].call(this, function () {
@@ -1547,13 +1819,28 @@ function builder (saw, xs) {
         }, this)
     ;
     
-    ['push','pop','shift','unshift','splice']
+    ['push','pop','shift','unshift','splice','reverse']
         .forEach(function (name) {
             this[name] = function () {
                 context.stack[name].apply(
                     context.stack,
                     [].slice.call(arguments)
                 );
+                saw.next();
+                return this;
+            };
+        }, this)
+    ;
+    
+    [ 'map', 'filter', 'reduce' ]
+        .forEach(function (name) {
+            this[name] = function () {
+                var res = context.stack[name].apply(
+                    context.stack,
+                    [].slice.call(arguments)
+                );
+                // stack must be an array, or bad things happen
+                context.stack = (Array.isArray(res) ? res : [res]);
                 saw.next();
                 return this;
             };
@@ -1600,35 +1887,19 @@ function builder (saw, xs) {
         saw.nest(cb, context);
     };
 }
-;
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/seq/index.js"]._cached = module.exports;
-    return module.exports;
-};
 
-require.modules["events"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = ".";
-    var __filename = "events";
-    
-    var require = function (file) {
-        return __require(file, ".");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, ".");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["events"]._cached = module.exports;
-    
-    (function () {
-        if (!process.EventEmitter) process.EventEmitter = function () {};
+});
+
+require.define("events", function (require, module, exports, __dirname, __filename) {
+    if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
-var isArray = Array.isArray;
+var isArray = typeof Array.isArray === 'function'
+    ? Array.isArray
+    : function (xs) {
+        return Object.toString.call(xs) === '[object Array]'
+    }
+;
 
 // By default EventEmitters will print a warning if more than
 // 10 listeners are added to it. This is a useful default which
@@ -1791,57 +2062,15 @@ EventEmitter.prototype.listeners = function(type) {
   }
   return this._events[type];
 };
-;
-    }).call(module.exports);
-    
-    __require.modules["events"]._cached = module.exports;
-    return module.exports;
-};
 
-require.modules["/node_modules/hashish/package.json"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/hashish";
-    var __filename = "/node_modules/hashish/package.json";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/hashish");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/hashish");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/hashish/package.json"]._cached = module.exports;
-    
-    (function () {
-        module.exports = {"name":"hashish","version":"0.0.4","description":"Hash data structure manipulation functions","main":"./index.js","repository":{"type":"git","url":"http://github.com/substack/node-hashish.git"},"keywords":["hash","object","convenience","manipulation","data structure"],"author":{"name":"James Halliday","email":"mail@substack.net","url":"http://substack.net"},"dependencies":{"traverse":">=0.2.4"},"devDependencies":{"expresso":">=0.6.0"},"scripts":{"test":"expresso"},"license":"MIT/X11","engine":["node >=0.2.0"]};
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/hashish/package.json"]._cached = module.exports;
-    return module.exports;
-};
+});
 
-require.modules["/node_modules/hashish/index.js"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/hashish";
-    var __filename = "/node_modules/hashish/index.js";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/hashish");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/hashish");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/hashish/index.js"]._cached = module.exports;
-    
-    (function () {
-        module.exports = Hash;
+require.define("/node_modules/hashish/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"main":"./index.js"}
+});
+
+require.define("/node_modules/hashish/index.js", function (require, module, exports, __dirname, __filename) {
+    module.exports = Hash;
 var Traverse = require('traverse');
 
 function Hash (hash, xs) {
@@ -2094,57 +2323,15 @@ Hash.size = function (ref) {
 Hash.compact = function (ref) {
     return Hash(ref).compact.items;
 };
-;
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/hashish/index.js"]._cached = module.exports;
-    return module.exports;
-};
 
-require.modules["/node_modules/traverse/package.json"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/traverse";
-    var __filename = "/node_modules/traverse/package.json";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/traverse");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/traverse");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/traverse/package.json"]._cached = module.exports;
-    
-    (function () {
-        module.exports = {"name":"traverse","version":"0.4.6","description":"Traverse and transform objects by visiting every node on a recursive walk","author":"James Halliday","license":"MIT/X11","main":"./index","repository":{"type":"git","url":"http://github.com/substack/js-traverse.git"},"devDependencies":{"expresso":"0.7.x"},"scripts":{"test":"expresso"}};
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/traverse/package.json"]._cached = module.exports;
-    return module.exports;
-};
+});
 
-require.modules["/node_modules/traverse/index.js"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/traverse";
-    var __filename = "/node_modules/traverse/index.js";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/traverse");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/traverse");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/traverse/index.js"]._cached = module.exports;
-    
-    (function () {
-        module.exports = Traverse;
+require.define("/node_modules/traverse/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"main":"./index"}
+});
+
+require.define("/node_modules/traverse/index.js", function (require, module, exports, __dirname, __filename) {
+    module.exports = Traverse;
 function Traverse (obj) {
     if (!(this instanceof Traverse)) return new Traverse(obj);
     this.value = obj;
@@ -2194,97 +2381,6 @@ Traverse.prototype.reduce = function (cb, init) {
     return acc;
 };
 
-Traverse.prototype.deepEqual = function (obj) {
-    if (arguments.length !== 1) {
-        throw new Error(
-            'deepEqual requires exactly one object to compare against'
-        );
-    }
-    
-    var equal = true;
-    var node = obj;
-    
-    this.forEach(function (y) {
-        var notEqual = (function () {
-            equal = false;
-            //this.stop();
-            return undefined;
-        }).bind(this);
-        
-        //if (node === undefined || node === null) return notEqual();
-        
-        if (!this.isRoot) {
-        /*
-            if (!Object.hasOwnProperty.call(node, this.key)) {
-                return notEqual();
-            }
-        */
-            if (typeof node !== 'object') return notEqual();
-            node = node[this.key];
-        }
-        
-        var x = node;
-        
-        this.post(function () {
-            node = x;
-        });
-        
-        var toS = function (o) {
-            return Object.prototype.toString.call(o);
-        };
-        
-        if (this.circular) {
-            if (Traverse(obj).get(this.circular.path) !== x) notEqual();
-        }
-        else if (typeof x !== typeof y) {
-            notEqual();
-        }
-        else if (x === null || y === null || x === undefined || y === undefined) {
-            if (x !== y) notEqual();
-        }
-        else if (x.__proto__ !== y.__proto__) {
-            notEqual();
-        }
-        else if (x === y) {
-            // nop
-        }
-        else if (typeof x === 'function') {
-            if (x instanceof RegExp) {
-                // both regexps on account of the __proto__ check
-                if (x.toString() != y.toString()) notEqual();
-            }
-            else if (x !== y) notEqual();
-        }
-        else if (typeof x === 'object') {
-            if (toS(y) === '[object Arguments]'
-            || toS(x) === '[object Arguments]') {
-                if (toS(x) !== toS(y)) {
-                    notEqual();
-                }
-            }
-            else if (x instanceof Date || y instanceof Date) {
-                if (!(x instanceof Date) || !(y instanceof Date)
-                || x.getTime() !== y.getTime()) {
-                    notEqual();
-                }
-            }
-            else {
-                var kx = Object.keys(x);
-                var ky = Object.keys(y);
-                if (kx.length !== ky.length) return notEqual();
-                for (var i = 0; i < kx.length; i++) {
-                    var k = kx[i];
-                    if (!Object.hasOwnProperty.call(y, k)) {
-                        notEqual();
-                    }
-                }
-            }
-        }
-    });
-    
-    return equal;
-};
-
 Traverse.prototype.paths = function () {
     var acc = [];
     this.forEach(function (x) {
@@ -2317,7 +2413,7 @@ Traverse.prototype.clone = function () {
             parents.push(src);
             nodes.push(dst);
             
-            Object.keys(src).forEach(function (key) {
+            forEach(Object_keys(src), function (key) {
                 dst[key] = clone(src[key]);
             });
             
@@ -2359,16 +2455,18 @@ function walk (root, cb, immutable) {
                 state.node = x;
                 if (stopHere) keepGoing = false;
             },
-            'delete' : function () {
+            'delete' : function (stopHere) {
                 delete state.parent.node[state.key];
+                if (stopHere) keepGoing = false;
             },
-            remove : function () {
-                if (Array.isArray(state.parent.node)) {
+            remove : function (stopHere) {
+                if (Array_isArray(state.parent.node)) {
                     state.parent.node.splice(state.key, 1);
                 }
                 else {
                     delete state.parent.node[state.key];
                 }
+                if (stopHere) keepGoing = false;
             },
             keys : null,
             before : function (f) { modifiers.before = f },
@@ -2382,7 +2480,7 @@ function walk (root, cb, immutable) {
         if (!alive) return state;
         
         if (typeof node === 'object' && node !== null) {
-            state.keys = Object.keys(node);
+            state.keys = Object_keys(node);
             
             state.isLeaf = state.keys.length == 0;
             
@@ -2412,7 +2510,7 @@ function walk (root, cb, immutable) {
         && state.node !== null && !state.circular) {
             parents.push(state);
             
-            state.keys.forEach(function (key, i) {
+            forEach(state.keys, function (key, i) {
                 path.push(key);
                 
                 if (modifiers.pre) modifiers.pre.call(state, state.node[key], key);
@@ -2438,19 +2536,11 @@ function walk (root, cb, immutable) {
     })(root).node;
 }
 
-Object.keys(Traverse.prototype).forEach(function (key) {
-    Traverse[key] = function (obj) {
-        var args = [].slice.call(arguments, 1);
-        var t = Traverse(obj);
-        return t[key].apply(t, args);
-    };
-});
-
 function copy (src) {
     if (typeof src === 'object' && src !== null) {
         var dst;
         
-        if (Array.isArray(src)) {
+        if (Array_isArray(src)) {
             dst = [];
         }
         else if (src instanceof Date) {
@@ -2465,68 +2555,58 @@ function copy (src) {
         else if (src instanceof String) {
             dst = new String(src);
         }
-        else {
+        else if (Object.create && Object.getPrototypeOf) {
             dst = Object.create(Object.getPrototypeOf(src));
         }
+        else if (src.__proto__ || src.constructor.prototype) {
+            var proto = src.__proto__ || src.constructor.prototype || {};
+            var T = function () {};
+            T.prototype = proto;
+            dst = new T;
+            if (!dst.__proto__) dst.__proto__ = proto;
+        }
         
-        Object.keys(src).forEach(function (key) {
+        forEach(Object_keys(src), function (key) {
             dst[key] = src[key];
         });
         return dst;
     }
     else return src;
 }
-;
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/traverse/index.js"]._cached = module.exports;
-    return module.exports;
+
+var Object_keys = Object.keys || function keys (obj) {
+    var res = [];
+    for (var key in obj) res.push(key)
+    return res;
 };
 
-require.modules["/node_modules/seq/node_modules/chainsaw/package.json"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/seq/node_modules/chainsaw";
-    var __filename = "/node_modules/seq/node_modules/chainsaw/package.json";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/seq/node_modules/chainsaw");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/seq/node_modules/chainsaw");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/seq/node_modules/chainsaw/package.json"]._cached = module.exports;
-    
-    (function () {
-        module.exports = {"name":"chainsaw","version":"0.0.9","description":"Build chainable fluent interfaces the easy way... with a freakin' chainsaw!","main":"./index.js","repository":{"type":"git","url":"http://github.com/substack/node-chainsaw.git"},"dependencies":{"traverse":">=0.3.0 <0.4"},"keywords":["chain","fluent","interface","monad","monadic"],"author":"James Halliday <mail@substack.net> (http://substack.net)","license":"MIT/X11","engine":{"node":">=0.4.0"}};
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/seq/node_modules/chainsaw/package.json"]._cached = module.exports;
-    return module.exports;
+var Array_isArray = Array.isArray || function isArray (xs) {
+    return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-require.modules["/node_modules/seq/node_modules/chainsaw/index.js"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/seq/node_modules/chainsaw";
-    var __filename = "/node_modules/seq/node_modules/chainsaw/index.js";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/seq/node_modules/chainsaw");
+var forEach = function (xs, fn) {
+    if (xs.forEach) return xs.forEach(fn)
+    else for (var i = 0; i < xs.length; i++) {
+        fn(xs[i], i, xs);
+    }
+};
+
+forEach(Object_keys(Traverse.prototype), function (key) {
+    Traverse[key] = function (obj) {
+        var args = [].slice.call(arguments, 1);
+        var t = Traverse(obj);
+        return t[key].apply(t, args);
     };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/seq/node_modules/chainsaw");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/seq/node_modules/chainsaw/index.js"]._cached = module.exports;
-    
-    (function () {
-        var Traverse = require('traverse');
+});
+
+});
+
+require.define("/node_modules/seq/node_modules/chainsaw/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"main":"./index.js"}
+});
+
+require.define("/node_modules/seq/node_modules/chainsaw/index.js", function (require, module, exports, __dirname, __filename) {
+    var Traverse = require('traverse');
 var EventEmitter = require('events').EventEmitter;
 
 module.exports = Chainsaw;
@@ -2634,57 +2714,15 @@ Chainsaw.saw = function (builder, handlers) {
     
     return saw;
 }; 
-;
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/seq/node_modules/chainsaw/index.js"]._cached = module.exports;
-    return module.exports;
-};
 
-require.modules["/node_modules/chainsaw/package.json"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/chainsaw";
-    var __filename = "/node_modules/chainsaw/package.json";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/chainsaw");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/chainsaw");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/chainsaw/package.json"]._cached = module.exports;
-    
-    (function () {
-        module.exports = {"name":"chainsaw","version":"0.1.0","description":"Build chainable fluent interfaces the easy way... with a freakin' chainsaw!","main":"./index.js","repository":{"type":"git","url":"http://github.com/substack/node-chainsaw.git"},"dependencies":{"traverse":">=0.3.0 <0.4"},"keywords":["chain","fluent","interface","monad","monadic"],"author":"James Halliday <mail@substack.net> (http://substack.net)","license":"MIT/X11","engine":{"node":">=0.4.0"}};
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/chainsaw/package.json"]._cached = module.exports;
-    return module.exports;
-};
+});
 
-require.modules["/node_modules/chainsaw/index.js"] = function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/node_modules/chainsaw";
-    var __filename = "/node_modules/chainsaw/index.js";
-    
-    var require = function (file) {
-        return __require(file, "/node_modules/chainsaw");
-    };
-    
-    require.resolve = function (file) {
-        return __require.resolve(name, "/node_modules/chainsaw");
-    };
-    
-    require.modules = __require.modules;
-    __require.modules["/node_modules/chainsaw/index.js"]._cached = module.exports;
-    
-    (function () {
-        var Traverse = require('traverse');
+require.define("/node_modules/chainsaw/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"main":"./index.js"}
+});
+
+require.define("/node_modules/chainsaw/index.js", function (require, module, exports, __dirname, __filename) {
+    var Traverse = require('traverse');
 var EventEmitter = require('events').EventEmitter;
 
 module.exports = Chainsaw;
@@ -2829,9 +2867,5 @@ function upgradeChainsaw(saw) {
         saw.next();
     };
 };
-;
-    }).call(module.exports);
-    
-    __require.modules["/node_modules/chainsaw/index.js"]._cached = module.exports;
-    return module.exports;
-};
+
+});
