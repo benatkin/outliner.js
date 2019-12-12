@@ -8,4 +8,4 @@ var bundle = browserify()
              .require('hashish')
              .require('chainsaw');
 
-fs.writeFileSync('attachments/vendor/bundle.js', bundle.bundle());
+fs.writeFileSync('vendor/bundle.js', bundle.bundle());
