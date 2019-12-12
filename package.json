@@ -13,10 +13,8 @@
     "node": ">=v0.4.8"
   },
   "scripts": {
-    "push": "couchapp push app.js $COUCH_URL",
-    "push-redir": "couchapp push redir.js $COUCH_URL",
-    "watch": "couchapp sync app.js $COUCH_URL || true",
-    "build-app": "node build-app.js"
+    "build-app": "node build-app.js",
+    "build": "cp -r lib public/lib"
   },
   "dependencies": {
     "browserify": "1.17.2",
