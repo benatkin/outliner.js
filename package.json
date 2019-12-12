@@ -13,20 +13,18 @@
     "node": ">=v0.4.8"
   },
   "scripts": {
-    "push":       "couchapp push app.js $COUCH_URL",
+    "push": "couchapp push app.js $COUCH_URL",
     "push-redir": "couchapp push redir.js $COUCH_URL",
-    "watch":      "couchapp sync app.js $COUCH_URL || true",
-    "build-app":  "node build-app.js"
+    "watch": "couchapp sync app.js $COUCH_URL || true",
+    "build-app": "node build-app.js"
   },
   "dependencies": {
-    "couchapp":   "*",
-    "underscore": "*",
-    "browserify": "*",
-    "shimify":    "*",
-    "seq":        "*",
-    "traverse":   "*",
-    "hashish":    "*",
-    "chainsaw":   "*"
+    "browserify": "1.17.2",
+    "shimify": "*",
+    "seq": "*",
+    "traverse": "*",
+    "hashish": "*",
+    "chainsaw": "*"
   },
   "devDependencies": {}
 }
