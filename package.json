@@ -17,7 +17,7 @@
     "build": "cp -r lib public/lib"
   },
   "dependencies": {
-    "browserify": "1.17.2",
+    "browserify": "17.0.0",
     "shimify": "*",
     "seq": "*",
     "traverse": "*",
